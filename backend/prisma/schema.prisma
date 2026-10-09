@@ -1,0 +1,297 @@
+// Prisma Schema for Local Development (Zero-Dependency SQLite)
+// See schema.postgres.prisma for the production AWS RDS schema.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("FREELANCER") // FREELANCER | CLIENT | ADMIN
+  avatarUrl    String?
+  isSuspended  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  freelancerProfile FreelancerProfile?
+  clientProfile     ClientProfile?
+  notifications     Notification[]
+  reviewsGiven      Review[]          @relation("ReviewsGiven")
+  reviewsReceived   Review[]          @relation("ReviewsReceived")
+  uploadedFiles     ProjectFile[]
+  createdTasks      Task[]            @relation("CreatedTasks")
+  attachments       ProjectAttachment[]
+}
+
+model FreelancerProfile {
+  id                    String   @id @default(uuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headline              String?
+  bio                   String?
+  experienceYears       Int      @default(0)
+  experienceLevel       String   @default("INTERMEDIATE") // ENTRY | INTERMEDIATE | EXPERT
+  hourlyRate            Float?
+  availability          String   @default("FULL_TIME") // FULL_TIME | PART_TIME | NOT_AVAILABLE
+  portfolioLinks        String?  @default("[]") // JSON string
+  education             String?  @default("[]") // JSON string
+  preferredCategories   String?  @default("[]") // JSON string
+  averageRating         Float    @default(0.0)
+  completedProjectsCount Int     @default(0)
+  profileCompletion     Int      @default(20)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  skills       FreelancerSkill[]
+  resumes      Resume[]
+  applications Application[]
+  contracts    Contract[]
+  tasks        Task[]             @relation("AssignedTasks")
+}
+
+model ClientProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName String?
+  industry    String?
+  description String?
+  website     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  projects  Project[]
+  contracts Contract[]
+}
+
+model Skill {
+  id             String   @id @default(uuid())
+  name           String   @unique
+  normalizedName String   @unique
+  category       String   @default("General")
+  createdAt      DateTime @default(now())
+
+  freelancerSkills FreelancerSkill[]
+  projectSkills    ProjectSkill[]
+}
+
+model FreelancerSkill {
+  id                  String            @id @default(uuid())
+  freelancerProfileId String
+  freelancerProfile   FreelancerProfile @relation(fields: [freelancerProfileId], references: [id], onDelete: Cascade)
+  skillId             String
+  skill               Skill             @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  yearsExperience     Int               @default(1)
+  isVerified          Boolean           @default(false)
+  createdAt           DateTime          @default(now())
+
+  @@unique([freelancerProfileId, skillId])
+}
+
+model Resume {
+  id                  String            @id @default(uuid())
+  freelancerProfileId String
+  freelancerProfile   FreelancerProfile @relation(fields: [freelancerProfileId], references: [id], onDelete: Cascade)
+  fileName            String
+  fileKey             String
+  fileSize            Int
+  mimeType            String
+  status              String            @default("UPLOADED") // UPLOADED | QUEUED | PROCESSING | COMPLETED | FAILED
+  rawText             String?
+  errorMessage        String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  analysis ResumeAnalysis?
+}
+
+model ResumeAnalysis {
+  id                  String   @id @default(uuid())
+  resumeId            String   @unique
+  resume              Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  extractedSkills     String   @default("[]") // JSON string
+  missingCommonSkills String   @default("[]") // JSON string
+  suggestedRoles      String   @default("[]") // JSON string
+  confidenceScore     Float    @default(0.0)
+  reviewedByUser      Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Project {
+  id                    String   @id @default(uuid())
+  clientId              String
+  client                ClientProfile @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  title                 String
+  description           String
+  category              String
+  experienceLevel       String   @default("INTERMEDIATE") // ENTRY | INTERMEDIATE | EXPERT
+  minBudget             Float
+  maxBudget             Float
+  currency              String   @default("USD")
+  estimatedDurationDays Int      @default(30)
+  complexity            String   @default("MEDIUM") // LOW | MEDIUM | HIGH
+  expectedDeliverables  String?
+  deadline              DateTime?
+  status                String   @default("OPEN") // DRAFT | OPEN | IN_PROGRESS | COMPLETED | CANCELLED
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  skills       ProjectSkill[]
+  attachments  ProjectAttachment[]
+  applications Application[]
+  contracts    Contract[]
+  tasks        Task[]
+  projectFiles ProjectFile[]
+  reviews      Review[]
+}
+
+model ProjectSkill {
+  id         String   @id @default(uuid())
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  skillId    String
+  skill      Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  isRequired Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  @@unique([projectId, skillId])
+}
+
+model ProjectAttachment {
+  id           String   @id @default(uuid())
+  projectId    String
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploadedById String
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
+  fileName     String
+  fileKey      String
+  fileSize     Int
+  mimeType     String
+  createdAt    DateTime @default(now())
+}
+
+model Application {
+  id                  String            @id @default(uuid())
+  projectId           String
+  project             Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  freelancerProfileId String
+  freelancerProfile   FreelancerProfile @relation(fields: [freelancerProfileId], references: [id], onDelete: Cascade)
+  coverLetter         String
+  proposedBudget      Float
+  estimatedDays       Int
+  status              String            @default("PENDING") // PENDING | ACCEPTED | REJECTED | WITHDRAWN
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  contract Contract?
+
+  @@unique([projectId, freelancerProfileId])
+}
+
+model Contract {
+  id                  String            @id @default(uuid())
+  projectId           String
+  project             Project           @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  applicationId       String            @unique
+  application         Application       @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  clientId            String
+  client              ClientProfile     @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  freelancerProfileId String
+  freelancer          FreelancerProfile @relation(fields: [freelancerProfileId], references: [id], onDelete: Restrict)
+  agreedBudget        Float
+  currency            String            @default("USD")
+  status              String            @default("ACTIVE") // ACTIVE | COMPLETED | TERMINATED
+  startedAt           DateTime          @default(now())
+  completedAt         DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  tasks Task[]
+}
+
+model Task {
+  id                  String            @id @default(uuid())
+  projectId           String
+  project             Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contractId          String?
+  contract            Contract?         @relation(fields: [contractId], references: [id], onDelete: SetNull)
+  title               String
+  description         String?
+  assignedToProfileId String?
+  assignedToProfile   FreelancerProfile? @relation("AssignedTasks", fields: [assignedToProfileId], references: [id], onDelete: SetNull)
+  createdByUserId     String
+  createdByUser       User              @relation("CreatedTasks", fields: [createdByUserId], references: [id])
+  priority            String            @default("MEDIUM") // LOW | MEDIUM | HIGH | URGENT
+  status              String            @default("TODO") // TODO | IN_PROGRESS | IN_REVIEW | COMPLETED
+  dueDate             DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  files ProjectFile[]
+}
+
+model ProjectFile {
+  id           String   @id @default(uuid())
+  projectId    String
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  taskId       String?
+  task         Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  uploaderId   String
+  uploader     User     @relation(fields: [uploaderId], references: [id])
+  fileName     String
+  fileKey      String
+  fileSize     Int
+  mimeType     String
+  category     String   @default("GENERAL") // REQUIREMENT | DELIVERABLE | RESUME | PORTFOLIO | GENERAL
+  createdAt    DateTime @default(now())
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reviewerId  String
+  reviewer    User     @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  revieweeId  String
+  reviewee    User     @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+  rating      Int
+  feedback    String
+  createdAt   DateTime @default(now())
+
+  @@unique([projectId, reviewerId, revieweeId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("SYSTEM")
+  isRead    Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+}
+
+model BackgroundJob {
+  id          String    @id @default(uuid())
+  jobType     String
+  status      String    @default("PENDING") // PENDING | PROCESSING | COMPLETED | FAILED
+  payload     String    @default("{}") // JSON string
+  result      String?   // JSON string
+  error       String?
+  retryCount  Int       @default(0)
+  maxRetries  Int       @default(3)
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
