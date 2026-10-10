@@ -17,6 +17,14 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
     });
   }
 
+  if (err.name === 'MulterError') {
+    const status = err.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
+    return res.status(status).json({
+      success: false,
+      error: status === 413 ? 'Uploaded file exceeds the 10 MB limit' : 'Invalid multipart file upload',
+    });
+  }
+
   // Handle Prisma Known Request Errors
   if (err.code === 'P2002') {
     return res.status(409).json({

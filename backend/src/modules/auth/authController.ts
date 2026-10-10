@@ -6,17 +6,17 @@ import { prisma } from '../../db/prisma.js';
 import { config } from '../../config/index.js';
 
 export const registerSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().trim().email().transform((email) => email.toLowerCase()),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(72),
+  name: z.string().trim().min(2, 'Name must be at least 2 characters').max(120),
   role: z.enum(['FREELANCER', 'CLIENT']),
   companyName: z.string().optional(),
   headline: z.string().optional(),
 });
 
 export const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string(),
+  email: z.string().trim().email().transform((email) => email.toLowerCase()),
+  password: z.string().min(1).max(72),
 });
 
 export async function register(req: Request, res: Response, next: NextFunction) {

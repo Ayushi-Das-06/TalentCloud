@@ -47,6 +47,21 @@ export function FreelancerDashboardPage() {
     },
   });
 
+  const { data: freelancerProfileData } = useQuery({
+    queryKey: ['editableProfile', user?.id],
+    queryFn: () => apiFetch<{ data: any }>(`/profiles/freelancers/${user?.profile?.id}`),
+    enabled: !!user?.profile?.id,
+  });
+
+  const confirmSkillMutation = useMutation({
+    mutationFn: ({ skillName, yearsExperience }: { skillName: string; yearsExperience: number }) =>
+      apiFetch('/profiles/freelancer/skills', {
+        method: 'POST',
+        body: JSON.stringify({ skillName, yearsExperience }),
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['editableProfile', user?.id] }),
+  });
+
   // 4. Resume Upload Mutation
   const resumeUploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -78,6 +93,14 @@ export function FreelancerDashboardPage() {
   const applications = appData?.data || [];
   const contracts = contractData?.data || [];
   const resume = resumeData?.data;
+  const confirmedSkillNames = new Set((freelancerProfileData?.data?.skills || []).filter((item: any) => item.isVerified).map((item: any) => item.skill.name.toLowerCase()));
+  let extractedSkills: { skill: string; occurrences: number }[] = [];
+  if (resume?.analysis?.extractedSkills) {
+    try {
+      const value = typeof resume.analysis.extractedSkills === 'string' ? JSON.parse(resume.analysis.extractedSkills) : resume.analysis.extractedSkills;
+      extractedSkills = Array.isArray(value) ? value : [];
+    } catch { extractedSkills = []; }
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
@@ -196,7 +219,7 @@ export function FreelancerDashboardPage() {
               <h3 className="font-bold text-slate-900 text-sm">Decoupled Resume Ingestion</h3>
             </div>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Upload your resume (PDF or TXT). A background worker will asynchronously extract your skills and sync them to your profile.
+              Upload your resume (PDF, DOCX, TXT, or Markdown). A background worker extracts suggested skills; confirm each skill before it is marked as verified.
             </p>
 
             <form onSubmit={handleFileUpload} className="space-y-3 pt-2">
@@ -249,17 +272,17 @@ export function FreelancerDashboardPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-1">
-                      {JSON.parse(resume.analysis.extractedSkills || '[]').map((s: any, idx: number) => (
-                        <span
-                          key={idx}
-                          className="px-2 py-0.5 rounded bg-white text-slate-700 border border-slate-200 text-[10px] font-medium"
-                        >
-                          {s.skill}
-                        </span>
-                      ))}
+                      {extractedSkills.map((item, idx) => {
+                        const confirmed = confirmedSkillNames.has(item.skill.toLowerCase());
+                        return <div key={`${item.skill}-${idx}`} className="flex items-center gap-1 rounded bg-white border border-slate-200 px-2 py-1">
+                          <span className="text-[10px] font-medium text-slate-700">{item.skill}</span>
+                          <button type="button" disabled={confirmed || confirmSkillMutation.isPending} onClick={() => confirmSkillMutation.mutate({ skillName: item.skill, yearsExperience: Math.min(5, Math.max(1, item.occurrences || 1)) })} className="text-[9px] font-semibold text-brand-700 disabled:text-emerald-700">{confirmed ? 'Confirmed' : 'Confirm skill'}</button>
+                        </div>;
+                      })}
                     </div>
                   </div>
                 )}
+                {confirmSkillMutation.isError && <p role="alert" className="text-xs text-rose-600">Could not confirm the skill. Please retry.</p>}
               </div>
             )}
           </div>

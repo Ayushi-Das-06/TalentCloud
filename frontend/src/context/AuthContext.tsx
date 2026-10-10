@@ -5,7 +5,7 @@ import { apiFetch } from '../lib/api.js';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   register: (data: any) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -47,7 +47,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('token', res.token);
       }
       setUser(res.user);
+      return res.user as User;
     }
+    throw new Error('Login failed. Please check your credentials.');
   };
 
   const register = async (data: any) => {

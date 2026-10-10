@@ -4,12 +4,13 @@
 
 - PostgreSQL Prisma schema: `backend/prisma/schema.postgres.prisma`.
 - AWS SDK adapters for S3 object storage and SQS queues. SQS uses a standard queue; failed jobs are stored in the database for admin retry.
-- Container build definitions for frontend, API, and worker, with PostgreSQL and Redis services in `docker-compose.yml`.
+- Container build definitions for frontend, API, and worker; local Compose wires PostgreSQL, Redis/BullMQ, and MinIO/S3-compatible storage.
 - Production config rejects absent or short `JWT_SECRET` and `COOKIE_SECRET` values.
+- Local SQLite setup uses `prisma:push`, which creates an empty database file if needed before schema initialization; it leaves existing database files intact.
 
 ## Not implemented
 
-The repository does not include Terraform/CloudFormation templates, ECS task definitions, IAM policies, CloudWatch dashboards/alarms, or production secret management. S3 and SQS SDK calls are implemented but were not tested against AWS. Docker Compose uses local file storage and BullMQ/Redis.
+The repository does not include Terraform/CloudFormation templates, ECS task definitions, IAM policies, CloudWatch dashboards/alarms, or production secret management. S3 and SQS SDK calls were not tested against AWS. Local Compose uses MinIO and BullMQ/Redis; it does not call AWS.
 
 ## No-cost next steps
 

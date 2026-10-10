@@ -46,6 +46,20 @@ describe('API access controls', () => {
     expect(response.status).toBe(401);
   });
 
+  it('rate limits repeated registration attempts', async () => {
+    let lastStatus = 0;
+    for (let attempt = 0; attempt < 11; attempt += 1) {
+      const response = await fetch(`${baseUrl}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      lastStatus = response.status;
+      await response.arrayBuffer();
+    }
+    expect(lastStatus).toBe(429);
+  });
+
   it('exposes the API health check without authentication', async () => {
     const response = await fetch(`${baseUrl}/health`);
     expect(response.status).toBe(200);

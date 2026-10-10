@@ -12,3 +12,6 @@ __pycache__/
 *.log
 backend/prisma/talentcloud-audit*.db
 backend/prisma/talentcloud.db
+backend/prisma/*.db
+backend/prisma/*.db-*
+backend/.talentcloud-e2e-*

@@ -2,6 +2,11 @@ import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../../db/prisma.js';
 import { normalizeSkill } from '../intelligent/matchingEngine.js';
 
+function parseJsonProfileField(value: string | null): unknown {
+  if (!value) return [];
+  try { return JSON.parse(value); } catch { return []; }
+}
+
 export async function getFreelancers(req: Request, res: Response, next: NextFunction) {
   try {
     const { search, skill, level, availability, page = '1', limit = '12' } = req.query;
@@ -73,7 +78,7 @@ export async function getFreelancerById(req: Request, res: Response, next: NextF
     const profile = await prisma.freelancerProfile.findUnique({
       where: { id },
       include: {
-        user: { select: { id: true, name: true, avatarUrl: true, createdAt: true } },
+        user: { select: { id: true, name: true, avatarUrl: true, createdAt: true, isSuspended: true } },
         skills: { include: { skill: true } },
         contracts: {
           where: { status: 'COMPLETED' },
@@ -85,8 +90,19 @@ export async function getFreelancerById(req: Request, res: Response, next: NextF
     if (!profile) {
       return res.status(404).json({ success: false, error: 'Freelancer profile not found' });
     }
+    if (profile.user.isSuspended) return res.status(404).json({ success: false, error: 'Freelancer profile not found' });
 
-    return res.json({ success: true, data: profile });
+    const { isSuspended: _isSuspended, ...publicUser } = profile.user;
+    return res.json({
+      success: true,
+      data: {
+        ...profile,
+        portfolioLinks: parseJsonProfileField(profile.portfolioLinks),
+        education: parseJsonProfileField(profile.education),
+        preferredCategories: parseJsonProfileField(profile.preferredCategories),
+        user: publicUser,
+      },
+    });
   } catch (err) {
     next(err);
   }
@@ -127,9 +143,9 @@ export async function updateFreelancerProfile(req: Request, res: Response, next:
         experienceLevel,
         hourlyRate: hourlyRate !== undefined ? Number(hourlyRate) : undefined,
         availability,
-        portfolioLinks,
-        education,
-        preferredCategories,
+        portfolioLinks: portfolioLinks === undefined ? undefined : JSON.stringify(portfolioLinks),
+        education: education === undefined ? undefined : JSON.stringify(education),
+        preferredCategories: preferredCategories === undefined ? undefined : JSON.stringify(preferredCategories),
         profileCompletion: Math.min(100, score),
       },
       include: {
@@ -179,11 +195,12 @@ export async function addFreelancerSkill(req: Request, res: Response, next: Next
           skillId: skill.id,
         },
       },
-      update: { yearsExperience: parseInt(yearsExperience, 10) },
+      update: { yearsExperience: Number(yearsExperience), isVerified: true },
       create: {
         freelancerProfileId: profile.id,
         skillId: skill.id,
-        yearsExperience: parseInt(yearsExperience, 10),
+        yearsExperience: Number(yearsExperience),
+        isVerified: true,
       },
       include: { skill: true },
     });
@@ -223,9 +240,9 @@ export async function getClientProfile(req: Request, res: Response, next: NextFu
     const client = await prisma.clientProfile.findUnique({
       where: { id },
       include: {
-        user: { select: { id: true, name: true, avatarUrl: true, createdAt: true } },
+        user: { select: { id: true, name: true, avatarUrl: true, createdAt: true, isSuspended: true } },
         projects: {
-          where: { status: { in: ['OPEN', 'IN_PROGRESS', 'COMPLETED'] } },
+          where: { status: 'OPEN' },
           orderBy: { createdAt: 'desc' },
           take: 10,
         },
@@ -235,8 +252,10 @@ export async function getClientProfile(req: Request, res: Response, next: NextFu
     if (!client) {
       return res.status(404).json({ success: false, error: 'Client profile not found' });
     }
+    if (client.user.isSuspended) return res.status(404).json({ success: false, error: 'Client profile not found' });
 
-    return res.json({ success: true, data: client });
+    const { isSuspended: _isSuspended, ...publicUser } = client.user;
+    return res.json({ success: true, data: { ...client, user: publicUser } });
   } catch (err) {
     next(err);
   }

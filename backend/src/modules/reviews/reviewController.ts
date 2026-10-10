@@ -91,7 +91,7 @@ export async function submitReview(req: Request, res: Response, next: NextFuncti
           title: 'New Review Received',
           message: `You received a ${numRating}-star rating for "${project.title}".`,
           type: 'REVIEW_RECEIVED',
-          link: `/profile`,
+          link: `/profile/edit`,
         },
       });
 

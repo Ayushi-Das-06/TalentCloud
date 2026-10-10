@@ -137,9 +137,9 @@ model FreelancerProfile {
   experienceLevel       ExperienceLevel    @default(INTERMEDIATE)
   hourlyRate            Decimal?           @db.Decimal(10, 2)
   availability          AvailabilityStatus @default(FULL_TIME)
-  portfolioLinks        Json?              @default("[]")
-  education             Json?              @default("[]")
-  preferredCategories   Json?              @default("[]")
+  portfolioLinks        String?            @default("[]") @db.Text
+  education             String?            @default("[]") @db.Text
+  preferredCategories   String?            @default("[]") @db.Text
   averageRating         Decimal            @default(0.0) @db.Decimal(3, 2)
   completedProjectsCount Int               @default(0)
   profileCompletion     Int                @default(20)
@@ -223,9 +223,9 @@ model ResumeAnalysis {
   id                    String   @id @default(uuid())
   resumeId              String   @unique
   resume                Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
-  extractedSkills       Json     @default("[]")
-  missingCommonSkills   Json     @default("[]")
-  suggestedRoles        Json     @default("[]")
+  extractedSkills       String   @default("[]") @db.Text
+  missingCommonSkills   String   @default("[]") @db.Text
+  suggestedRoles        String   @default("[]") @db.Text
   confidenceScore       Decimal  @default(0.0) @db.Decimal(5, 2)
   reviewedByUser        Boolean  @default(false)
   createdAt             DateTime @default(now())

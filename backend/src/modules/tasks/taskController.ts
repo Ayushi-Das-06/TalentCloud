@@ -93,7 +93,7 @@ export async function createTask(req: Request, res: Response, next: NextFunction
           title: 'New Task Assigned',
           message: `Task "${title}" has been assigned to you.`,
           type: 'TASK_ASSIGNED',
-          link: `/workspace/projects/${projectId}/tasks`,
+          link: `/workspace/projects/${projectId}`,
         },
       });
     }

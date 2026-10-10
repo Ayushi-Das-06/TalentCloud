@@ -17,14 +17,28 @@ export async function getProjects(req: Request, res: Response, next: NextFunctio
       sortBy = 'newest',
     } = req.query;
 
-    const pageNum = Math.max(1, parseInt(page as string, 10));
-    const take = Math.min(50, Math.max(1, parseInt(limit as string, 10)));
+    const pageNum = Number(page);
+    const requestedLimit = Number(limit);
+    if (!Number.isInteger(pageNum) || pageNum < 1 || !Number.isInteger(requestedLimit) || requestedLimit < 1) {
+      return res.status(400).json({ success: false, error: 'Page and limit must be positive integers' });
+    }
+    const take = Math.min(50, requestedLimit);
     const skip = (pageNum - 1) * take;
 
+    const requester = req.user;
+    const allowedStatuses = ['DRAFT', 'OPEN', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'ALL'];
+    if (typeof status !== 'string' || !allowedStatuses.includes(status)) {
+      return res.status(400).json({ success: false, error: 'Invalid project status filter' });
+    }
+    const canSeePrivate = requester?.role === 'ADMIN' || requester?.role === 'CLIENT';
     const where: any = {};
-
-    if (status && status !== 'ALL') {
-      where.status = status as any;
+    if (status === 'ALL' && canSeePrivate) {
+      if (requester?.role === 'CLIENT') where.clientId = requester.clientProfileId;
+    } else if (status === 'OPEN' || !canSeePrivate) {
+      where.status = 'OPEN';
+    } else {
+      where.status = status;
+      if (requester?.role === 'CLIENT') where.clientId = requester.clientProfileId;
     }
 
     if (search) {
@@ -111,9 +125,20 @@ export async function getProjectById(req: Request, res: Response, next: NextFunc
       return res.status(404).json({ success: false, error: 'Project not found' });
     }
 
-    let contracts: Awaited<ReturnType<typeof prisma.contract.findMany>> = [];
     const requester = req.user;
     const isClientOwner = requester?.role === 'CLIENT' && requester.clientProfileId === project.clientId;
+    const isAdmin = requester?.role === 'ADMIN';
+    if (project.status !== 'OPEN' && !isClientOwner && !isAdmin) {
+      const hasContractAccess = requester?.role === 'FREELANCER' && requester.freelancerProfileId
+        ? !!(await prisma.contract.findFirst({
+            where: { projectId: project.id, freelancerProfileId: requester.freelancerProfileId },
+            select: { id: true },
+          }))
+        : false;
+      if (!hasContractAccess) return res.status(404).json({ success: false, error: 'Project not found' });
+    }
+
+    let contracts: Awaited<ReturnType<typeof prisma.contract.findMany>> = [];
     if (requester?.role === 'ADMIN' || isClientOwner || requester?.role === 'FREELANCER') {
       const where = {
         projectId: project.id,
@@ -224,6 +249,11 @@ export async function updateProject(req: Request, res: Response, next: NextFunct
     }
 
     const { title, description, category, minBudget, maxBudget, status, deadline } = req.body;
+    const effectiveMinBudget = minBudget === undefined ? Number(project.minBudget) : Number(minBudget);
+    const effectiveMaxBudget = maxBudget === undefined ? Number(project.maxBudget) : Number(maxBudget);
+    if (effectiveMinBudget > effectiveMaxBudget) {
+      return res.status(400).json({ success: false, error: 'Minimum budget cannot exceed maximum budget' });
+    }
     if (status !== undefined && (status !== 'CANCELLED' || project.status !== 'OPEN')) {
       return res.status(400).json({ success: false, error: 'Only open projects can be cancelled here; hiring and completion manage other state changes' });
     }
@@ -234,8 +264,8 @@ export async function updateProject(req: Request, res: Response, next: NextFunct
         title,
         description,
         category,
-        minBudget: minBudget ? Number(minBudget) : undefined,
-        maxBudget: maxBudget ? Number(maxBudget) : undefined,
+        minBudget: minBudget === undefined ? undefined : Number(minBudget),
+        maxBudget: maxBudget === undefined ? undefined : Number(maxBudget),
         status: status as any,
         deadline: deadline ? new Date(deadline) : undefined,
       },

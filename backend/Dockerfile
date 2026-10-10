@@ -4,6 +4,7 @@ RUN apk add --no-cache openssl
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
+ENV DATABASE_URL=postgresql://build:build@localhost:5432/talentcloud
 RUN npx prisma generate --schema prisma/schema.postgres.prisma && npm run build
 
 FROM node:24-alpine AS runtime

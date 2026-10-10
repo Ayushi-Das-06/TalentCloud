@@ -15,6 +15,7 @@ import {
   X,
   Sparkles,
 } from 'lucide-react';
+import { NotificationBell } from './NotificationBell.js';
 
 export function Navbar() {
   const { user, logout } = useAuth();
@@ -59,10 +60,12 @@ export function Navbar() {
               <Sparkles className="w-4 h-4 text-emerald-500" />
               Smart Estimator
             </Link>
-            <Link to="/queue-demo" className="hover:text-brand-600 flex items-center gap-1.5 transition-colors">
-              <Cpu className="w-4 h-4 text-indigo-500" />
-              Queue & Cloud Lab
-            </Link>
+            {user?.role === 'ADMIN' && (
+              <Link to="/queue-demo" className="hover:text-brand-600 flex items-center gap-1.5 transition-colors">
+                <Cpu className="w-4 h-4 text-indigo-500" />
+                Queue & Cloud Lab
+              </Link>
+            )}
 
             {user?.role === 'FREELANCER' && (
               <Link to="/skill-gap" className="hover:text-brand-600 flex items-center gap-1.5 transition-colors">
@@ -76,6 +79,7 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-4">
             {user ? (
               <div className="flex items-center gap-3">
+                <NotificationBell user={user} />
                 {user.role === 'CLIENT' && (
                   <Link
                     to="/projects/create"
@@ -86,8 +90,10 @@ export function Navbar() {
                   </Link>
                 )}
 
+                <Link to="/profile/edit" className="hidden lg:inline text-xs font-medium text-slate-500 hover:text-brand-700">Edit profile</Link>
+
                 <Link
-                  to={user.role === 'CLIENT' ? '/client/dashboard' : '/freelancer/dashboard'}
+                  to={user.role === 'CLIENT' ? '/client/dashboard' : user.role === 'ADMIN' ? '/queue-demo' : '/freelancer/dashboard'}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm font-medium transition-colors"
                 >
                   <UserIcon className="w-4 h-4 text-slate-500" />
@@ -124,7 +130,8 @@ export function Navbar() {
           </div>
 
           {/* Mobile menu toggle */}
-          <div className="flex md:hidden">
+          <div className="flex md:hidden items-center gap-1">
+            {user && <NotificationBell user={user} />}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-lg text-slate-600 hover:bg-slate-100"
@@ -168,8 +175,9 @@ export function Navbar() {
           </Link>
           {user ? (
             <div className="pt-3 border-t border-slate-200">
+              <Link to="/profile/edit" onClick={() => setMobileMenuOpen(false)} className="block text-slate-700 font-medium py-2">Edit profile</Link>
               <Link
-                to={user.role === 'CLIENT' ? '/client/dashboard' : '/freelancer/dashboard'}
+                to={user.role === 'CLIENT' ? '/client/dashboard' : user.role === 'ADMIN' ? '/queue-demo' : '/freelancer/dashboard'}
                 onClick={() => setMobileMenuOpen(false)}
                 className="block text-brand-600 font-semibold py-2"
               >

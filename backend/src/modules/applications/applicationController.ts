@@ -19,6 +19,11 @@ export async function submitApplication(req: Request, res: Response, next: NextF
       return res.status(400).json({ success: false, error: 'This project is no longer accepting applications' });
     }
 
+    const budgetOffer = Number(proposedBudget);
+    if (budgetOffer < Number(project.minBudget) || budgetOffer > Number(project.maxBudget)) {
+      return res.status(400).json({ success: false, error: 'Proposed budget must be within the project budget range' });
+    }
+
     if (project.deadline && new Date() > new Date(project.deadline)) {
       return res.status(400).json({ success: false, error: 'The application deadline has passed' });
     }
@@ -42,8 +47,8 @@ export async function submitApplication(req: Request, res: Response, next: NextF
         projectId,
         freelancerProfileId: profile.id,
         coverLetter,
-        proposedBudget: Number(proposedBudget),
-        estimatedDays: parseInt(estimatedDays, 10),
+        proposedBudget: budgetOffer,
+        estimatedDays: Number(estimatedDays),
         status: 'PENDING',
       },
     });

@@ -17,9 +17,8 @@ export function LoginPage() {
     setLoading(true);
 
     try {
-      await login(email, password);
-      // Auth context updates user; navigate based on email/role heuristic or let router handle
-      navigate('/projects');
+      const signedInUser = await login(email, password);
+      navigate(signedInUser.role === 'CLIENT' ? '/client/dashboard' : signedInUser.role === 'ADMIN' ? '/queue-demo' : '/freelancer/dashboard');
     } catch (err: any) {
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {

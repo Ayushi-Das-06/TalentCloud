@@ -11,6 +11,10 @@ export function initializeWorkerHandlers() {
   queueService.registerHandler('RESUME_ANALYSIS', async (job: QueueJob) => {
     const { resumeId, fileKey, mimeType, freelancerProfileId, userId } = job.data;
     console.log(`[Worker] Starting RESUME_ANALYSIS for resume ${resumeId} (Job: ${job.id})`);
+    try {
+    const existingResume = await prisma.resume.findUnique({ where: { id: resumeId }, select: { status: true } });
+    if (!existingResume) throw new Error(`Resume ${resumeId} no longer exists`);
+    if (existingResume.status === 'COMPLETED') return { alreadyProcessed: true };
 
     // Update resume state to PROCESSING
     await prisma.resume.update({
@@ -42,16 +46,16 @@ export function initializeWorkerHandlers() {
       await tx.resumeAnalysis.upsert({
         where: { resumeId },
         update: {
-          extractedSkills: analysisResult.extractedSkills as any,
-          missingCommonSkills: analysisResult.missingCommonSkills as any,
-          suggestedRoles: analysisResult.suggestedRoles as any,
+          extractedSkills: JSON.stringify(analysisResult.extractedSkills),
+          missingCommonSkills: JSON.stringify(analysisResult.missingCommonSkills),
+          suggestedRoles: JSON.stringify(analysisResult.suggestedRoles),
           confidenceScore: analysisResult.confidenceScore,
         },
         create: {
           resumeId,
-          extractedSkills: analysisResult.extractedSkills as any,
-          missingCommonSkills: analysisResult.missingCommonSkills as any,
-          suggestedRoles: analysisResult.suggestedRoles as any,
+          extractedSkills: JSON.stringify(analysisResult.extractedSkills),
+          missingCommonSkills: JSON.stringify(analysisResult.missingCommonSkills),
+          suggestedRoles: JSON.stringify(analysisResult.suggestedRoles),
           confidenceScore: analysisResult.confidenceScore,
         },
       });
@@ -78,7 +82,7 @@ export function initializeWorkerHandlers() {
             freelancerProfileId,
             skillId: skill.id,
             yearsExperience: Math.min(5, Math.max(1, item.occurrences)),
-            isVerified: true,
+            isVerified: false,
           },
         });
       }
@@ -90,7 +94,7 @@ export function initializeWorkerHandlers() {
           title: 'Resume Analyzed Successfully',
           message: `Identified ${analysisResult.extractedSkills.length} skills from your uploaded resume with ${analysisResult.confidenceScore}% confidence.`,
           type: 'RESUME_PARSED',
-          link: '/freelancer/profile',
+          link: '/profile/edit',
         },
       });
     });
@@ -100,6 +104,14 @@ export function initializeWorkerHandlers() {
       extractedSkillsCount: analysisResult.extractedSkills.length,
       confidenceScore: analysisResult.confidenceScore,
     };
+    } catch (error) {
+      const reason = error instanceof Error ? error.message.slice(0, 1000) : 'Resume analysis failed';
+      await prisma.resume.update({
+        where: { id: resumeId },
+        data: { status: 'FAILED', errorMessage: reason },
+      }).catch(() => undefined);
+      throw error;
+    }
   });
 
   // 2. Burst Demonstration Workload Handler
@@ -121,4 +133,12 @@ export function initializeWorkerHandlers() {
 if (process.argv[1]?.endsWith('worker.ts') || process.argv[1]?.endsWith('worker.js')) {
   console.log('[Worker] Starting standalone worker process...');
   initializeWorkerHandlers();
+  const stop = async (signal: string) => {
+    console.log(`[Worker] Received ${signal}; shutting down queue worker...`);
+    await queueService.close();
+    await prisma.$disconnect();
+    process.exit(0);
+  };
+  process.once('SIGINT', () => void stop('SIGINT'));
+  process.once('SIGTERM', () => void stop('SIGTERM'));
 }

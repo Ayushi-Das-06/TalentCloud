@@ -19,6 +19,7 @@ import intelligentRoutes from './modules/intelligent/intelligentRoutes.js';
 import adminRoutes from './modules/admin/adminRoutes.js';
 
 export const app = express();
+if (config.trustProxyHops > 0) app.set('trust proxy', config.trustProxyHops);
 
 // Security and utility middleware
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));

@@ -17,17 +17,41 @@ const upload = multer({
       '.md': ['text/markdown', 'text/plain'],
     };
     const extension = path.extname(file.originalname).toLowerCase();
-    if (allowed[extension]?.includes(file.mimetype)) {
+    const nameIsSafe = file.originalname.length <= 255 && !/[\r\n\u0000-\u001f]/.test(file.originalname);
+    if (nameIsSafe && allowed[extension]?.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Unsupported file format. Please upload PDF, DOCX, TXT, or Markdown with a matching file type.'));
+      const error = new Error('Unsupported file name or format. Upload PDF, DOCX, TXT, or Markdown with a matching file type.') as Error & { statusCode: number; isOperational: boolean };
+      error.statusCode = 400;
+      error.isOperational = true;
+      cb(error);
     }
   },
 });
 
 export const fileUploadMiddleware = upload.single('file');
 
+export function hasValidFileSignature(file: Express.Multer.File): boolean {
+  const extension = path.extname(file.originalname).toLowerCase();
+  if (extension === '.pdf') return file.buffer.subarray(0, 1024).includes(Buffer.from('%PDF-'));
+  if (extension === '.docx') return file.buffer.subarray(0, 4).equals(Buffer.from([0x50, 0x4b, 0x03, 0x04]));
+  if (extension === '.txt' || extension === '.md') {
+    const text = file.buffer.toString('utf8');
+    return !file.buffer.includes(0) && Buffer.from(text, 'utf8').equals(file.buffer) && !/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/.test(text);
+  }
+  return false;
+}
+
+export function validateFileContent(req: Request, res: Response, next: NextFunction) {
+  if (!req.file) return next();
+  if (!hasValidFileSignature(req.file)) {
+    return res.status(400).json({ success: false, error: 'File contents do not match the supported file type' });
+  }
+  return next();
+}
+
 export async function uploadResume(req: Request, res: Response, next: NextFunction) {
+  let unlinkedStorageKey: string | undefined;
   try {
     if (!req.user || req.user.role !== 'FREELANCER') {
       return res.status(403).json({ success: false, error: 'Only freelancers can upload resumes' });
@@ -47,6 +71,7 @@ export async function uploadResume(req: Request, res: Response, next: NextFuncti
       req.file.mimetype,
       'resumes'
     );
+    unlinkedStorageKey = saved.fileKey;
 
     // 2. Persist Resume record
     const resume = await prisma.resume.create({
@@ -59,6 +84,7 @@ export async function uploadResume(req: Request, res: Response, next: NextFuncti
         status: 'QUEUED',
       },
     });
+    unlinkedStorageKey = undefined;
 
     // 3. Queue asynchronous background processing job (Non-blocking cloud pattern!)
     try {
@@ -83,11 +109,13 @@ export async function uploadResume(req: Request, res: Response, next: NextFuncti
       data: resume,
     });
   } catch (err) {
+    if (unlinkedStorageKey) await storageService.deleteFile(unlinkedStorageKey).catch(() => undefined);
     next(err);
   }
 }
 
 export async function uploadProjectFile(req: Request, res: Response, next: NextFunction) {
+  let unlinkedStorageKey: string | undefined;
   try {
     if (!req.user) return res.status(401).json({ success: false, error: 'Authentication required' });
     if (!req.file) return res.status(400).json({ success: false, error: 'File is required' });
@@ -123,6 +151,7 @@ export async function uploadProjectFile(req: Request, res: Response, next: NextF
     }
 
     const saved = await storageService.saveFile(req.file.buffer, req.file.originalname, req.file.mimetype, 'projects');
+    unlinkedStorageKey = saved.fileKey;
     const file = await prisma.projectFile.create({
       data: {
         projectId,
@@ -135,9 +164,11 @@ export async function uploadProjectFile(req: Request, res: Response, next: NextF
         category: fileCategory,
       },
     });
+    unlinkedStorageKey = undefined;
 
     return res.status(201).json({ success: true, data: file });
   } catch (err) {
+    if (unlinkedStorageKey) await storageService.deleteFile(unlinkedStorageKey).catch(() => undefined);
     next(err);
   }
 }

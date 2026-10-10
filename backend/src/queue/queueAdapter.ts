@@ -36,6 +36,8 @@ class QueueService {
   private bullWorker?: Worker;
   private sqsClient?: SQSClient;
   private sqsWorkerStarted = false;
+  private sqsPollPromise?: Promise<void>;
+  private closed = false;
 
   constructor() {
     if (config.queue.driver === 'sqs') {
@@ -70,6 +72,7 @@ class QueueService {
   }
 
   public startWorker() {
+    if (this.closed) throw new Error('Queue service is closed and cannot start a worker.');
     if (this.sqsClient) {
       this.startSqsWorker();
       return;
@@ -116,6 +119,24 @@ class QueueService {
 
     this.bullWorker.on('error', (error) => console.error('[Queue] BullMQ worker error:', error));
     console.log('[Queue] BullMQ worker started');
+  }
+
+  public async close(): Promise<void> {
+    this.closed = true;
+    this.sqsWorkerStarted = false;
+    const memoryDrain = async () => {
+      const deadline = Date.now() + 30_000;
+      while ((this.isProcessingMemory || this.memoryQueue.length > 0) && Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+    };
+    await Promise.allSettled([
+      this.bullWorker?.close(),
+      this.bullQueue?.close(),
+      memoryDrain(),
+    ]);
+    await this.sqsPollPromise;
+    this.sqsClient?.destroy();
   }
 
   public async enqueue<T = any>(jobType: string, data: T, maxRetries = 3): Promise<QueueJob<T>> {
@@ -352,7 +373,7 @@ class QueueService {
   private startSqsWorker() {
     if (this.sqsWorkerStarted) return;
     this.sqsWorkerStarted = true;
-    void this.pollSqs();
+    this.sqsPollPromise = this.pollSqs();
   }
 
   private async pollSqs(): Promise<void> {

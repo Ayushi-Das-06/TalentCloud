@@ -17,4 +17,4 @@ Base path: `/api/v1`. Protected routes accept `Authorization: Bearer <token>`; l
 | Intelligent | `GET /intelligent/match/project/:projectId`, `GET /intelligent/match/freelancer`, `POST /intelligent/skill-gap`, `POST /intelligent/estimate` | Project owner/admin for candidates; freelancer for recommendations/gaps; estimator public |
 | Admin | `GET /admin/stats`, `GET /admin/queue`, `POST /admin/queue/burst`, `POST /admin/queue/retry/:jobId` | ADMIN only |
 
-Request bodies are validated with Zod on authentication endpoints. Some marketplace write endpoints still need consistent schema validation and pagination edge-case coverage; see `PROJECT_PLAN.md`.
+Request bodies, public discovery query filters, and supported UUID route parameters are validated with Zod before controller work. Authentication, upload, and computational matching endpoints use IP-based limits in each API process. Limits are not shared between replicas. The API honors forwarded IP headers only when `TRUST_PROXY_HOPS` is explicitly configured for a trusted proxy topology.

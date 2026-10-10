@@ -20,6 +20,8 @@ import { ProjectWorkspacePage } from './pages/ProjectWorkspacePage.js';
 import { SkillGapPage } from './pages/SkillGapPage.js';
 import { BudgetEstimatorPage } from './pages/BudgetEstimatorPage.js';
 import { QueueDemoPage } from './pages/QueueDemoPage.js';
+import { ProfilePage } from './pages/ProfilePage.js';
+import { FreelancerProfilePage } from './pages/FreelancerProfilePage.js';
 
 function NotFoundPage() {
   return (
@@ -48,6 +50,7 @@ export function App() {
           <Route path="/projects" element={<ProjectDiscoveryPage />} />
           <Route path="/projects/:id" element={<ProjectDetailsPage />} />
           <Route path="/freelancers" element={<FreelancerDiscoveryPage />} />
+          <Route path="/freelancers/:id" element={<FreelancerProfilePage />} />
           <Route path="/estimator" element={<BudgetEstimatorPage />} />
           <Route
             path="/queue-demo"
@@ -59,6 +62,7 @@ export function App() {
           />
 
           {/* Freelancer Routes */}
+          <Route path="/profile/edit" element={<ProtectedRoute allowedRoles={['FREELANCER', 'CLIENT']}><ProfilePage /></ProtectedRoute>} />
           <Route
             path="/freelancer/dashboard"
             element={

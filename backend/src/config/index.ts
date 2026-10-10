@@ -6,10 +6,13 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
 
 const isProduction = process.env.NODE_ENV === 'production';
-const jwtSecret = process.env.JWT_SECRET || (isProduction ? '' : 'development_super_secret_jwt_key_at_least_32_chars');
-const cookieSecret = process.env.COOKIE_SECRET || (isProduction ? '' : 'development_cookie_secret_key_12345');
+const developmentJwtSecret = 'development_super_secret_jwt_key_at_least_32_chars';
+const developmentCookieSecret = 'development_cookie_secret_key_12345';
+const jwtSecret = process.env.JWT_SECRET || (isProduction ? '' : developmentJwtSecret);
+const cookieSecret = process.env.COOKIE_SECRET || (isProduction ? '' : developmentCookieSecret);
 const queueDriver = process.env.QUEUE_DRIVER || 'memory';
 const storageDriver = process.env.STORAGE_DRIVER || 'local';
+const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS || 0);
 const matchingWeights = {
   skill: parseInt(process.env.MATCH_WEIGHT_SKILL || '40', 10),
   experience: parseInt(process.env.MATCH_WEIGHT_EXPERIENCE || '20', 10),
@@ -25,6 +28,9 @@ if (!['memory', 'bullmq', 'sqs'].includes(queueDriver)) {
 if (!['local', 's3'].includes(storageDriver)) {
   throw new Error('STORAGE_DRIVER must be local or s3.');
 }
+if (!Number.isInteger(trustProxyHops) || trustProxyHops < 0 || trustProxyHops > 5) {
+  throw new Error('TRUST_PROXY_HOPS must be an integer from 0 to 5.');
+}
 if (Object.values(matchingWeights).some((weight) => !Number.isInteger(weight) || weight < 0 || weight > 100)) {
   throw new Error('Matching weights must be whole numbers from 0 to 100.');
 }
@@ -32,15 +38,22 @@ if (Object.values(matchingWeights).reduce((total, weight) => total + weight, 0) 
   throw new Error('Matching weights must sum to 100.');
 }
 
-if (isProduction && (jwtSecret.length < 32 || cookieSecret.length < 32)) {
-  throw new Error('Production requires JWT_SECRET and COOKIE_SECRET values of at least 32 characters.');
+if (isProduction && (
+  jwtSecret.length < 32 ||
+  cookieSecret.length < 32 ||
+  jwtSecret === developmentJwtSecret ||
+  cookieSecret === developmentCookieSecret
+)) {
+  throw new Error('Production requires unique JWT_SECRET and COOKIE_SECRET values of at least 32 characters; development defaults are not allowed.');
 }
 
 export const config = {
   env: process.env.NODE_ENV || 'development',
+  databaseProvider: (process.env.DATABASE_URL || '').startsWith('file:') ? 'SQLite' : 'PostgreSQL',
   port: parseInt(process.env.PORT || '5000', 10),
   apiPrefix: process.env.API_PREFIX || '/api/v1',
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  trustProxyHops,
   jwt: {
     secret: jwtSecret,
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',

@@ -16,9 +16,15 @@
 - Added DOCX resume text extraction using JSZip/XML handling and limited upload types to formats the parser supports. Removed Mammoth after its dependency audit identified a moderate advisory.
 - Added project/task file upload and workspace links, plus API access-control, local path traversal, and DOCX extraction regression tests; updated Docker build files and project documentation.
 - Added project file deletion for the uploader, project owner, or administrator, with local/S3 object cleanup and a workspace delete control.
-- Verified PostgreSQL and SQLite schema generation/build paths, backend build and 17 tests, and frontend production build. See `TESTING.md` for limitations and dependency audit results.
+- Rechecked public project visibility and private profiles; added auth/upload/matching rate limits, route/query/body validation, upload signature checks, profile editing, notification controls, and role-aware login redirects.
+- Made PostgreSQL resume/profile JSON-text fields match SQLite, added explicit resume skill confirmation, and made resume retries idempotent with terminal failure status updates.
+- Wired the Compose API/worker to MinIO, added bucket initialization and trusted-proxy configuration, and added graceful queue/worker shutdown.
+- Added the missing `PROJECT_AUDIT.md` checklist and updated API, setup, and limitation documentation.
+- Added a repeatable `npm run test:e2e` smoke that builds a disposable SQLite database and exercises registration through review, including concurrent hiring and in-process resume-worker processing.
+- Added a local SQLite initialization helper. `npm run prisma:push` creates an empty file when needed before running Prisma; verified it on a clean ignored database. The existing seed script also passed on a separate disposable database.
+- Verified both Prisma schema validations and client generations, backend build and 30 regression tests, SQLite E2E, and frontend production build. Docker/Compose and live AWS remain unverified.
 
 ## Open work
 
-- Complete integration/E2E coverage and actual Docker/AWS deployment validation.
+- Complete integration/E2E coverage, actual Docker/AWS deployment validation, and resolve the Prisma config dependency advisories.
 - Resolve remaining Prisma config dependency advisories through a compatible, verified Prisma upgrade.

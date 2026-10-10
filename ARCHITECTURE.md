@@ -6,7 +6,7 @@ TalentCloud is a TypeScript monorepo with a React single-page client, Express AP
 flowchart LR
   Browser[React + Vite] -->|REST /api/v1| API[Express API]
   API --> DB[(SQLite local / PostgreSQL deployment)]
-  API --> Files[Local file storage]
+  API --> Files[Local files / MinIO / S3]
   API --> Queue{Queue adapter}
   Queue -->|memory| Inline[In-process async consumer]
   Queue -->|BullMQ| Redis[(Redis)]
@@ -24,7 +24,8 @@ flowchart LR
 - `backend/prisma/schema.prisma` is the local SQLite schema. `schema.postgres.prisma` is used to generate the PostgreSQL client in the container image.
 - The memory queue is useful for demos but is process-local and not durable. BullMQ uses Redis; BullMQ and SQS are consumed by a separate `worker.ts` process.
 - Resume files use local storage or S3 with random keys. Downloads stream through the API after owner/participant authorization.
+- Resume analysis and profile JSON fields use JSON text for compatible SQLite/PostgreSQL behavior. In-process memory jobs are demo-only and lost on process restart; Redis/BullMQ and SQS provide external queue durability, subject to their configured persistence/redrive settings.
 
 ## AWS status
 
-The project has PostgreSQL, S3, and SQS adapters and a container topology for API, worker, PostgreSQL, and Redis. AWS infrastructure templates, IAM policies, CloudWatch configuration, and live deployment are not implemented or verified.
+The project has PostgreSQL, S3, and SQS adapters and a local container topology for API, worker, PostgreSQL, Redis, and MinIO. AWS infrastructure templates, IAM policies, CloudWatch configuration, and live deployment are not implemented or verified.

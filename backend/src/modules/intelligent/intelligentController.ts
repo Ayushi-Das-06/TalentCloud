@@ -51,7 +51,7 @@ export async function matchFreelancersForProject(req: Request, res: Response, ne
     const freelancers = await prisma.freelancerProfile.findMany({
       where: { user: { isSuspended: false } },
       include: {
-        user: { select: { name: true, email: true, avatarUrl: true } },
+        user: { select: { name: true, avatarUrl: true } },
         skills: { include: { skill: true } },
       },
     });
@@ -195,10 +195,10 @@ export async function getSkillGapAnalysis(req: Request, res: Response, next: Nex
         where: { id: projectId },
         include: { skills: { include: { skill: true } } },
       });
-      if (project) {
-        title = project.title;
-        requiredSkills = project.skills.map((s) => s.skill.name);
-      }
+      if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
+      if (project.status !== 'OPEN') return res.status(404).json({ success: false, error: 'Project not found' });
+      title = project.title;
+      requiredSkills = project.skills.map((s) => s.skill.name);
     } else if (Array.isArray(targetSkills)) {
       requiredSkills = targetSkills;
     } else {

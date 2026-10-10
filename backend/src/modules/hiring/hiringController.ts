@@ -39,6 +39,10 @@ export async function hireFreelancer(req: Request, res: Response, next: NextFunc
       });
     }
 
+    if (Number(application.proposedBudget) < Number(application.project.minBudget) || Number(application.proposedBudget) > Number(application.project.maxBudget)) {
+      return res.status(400).json({ success: false, error: 'Proposal budget is outside the project budget range' });
+    }
+
     if (application.status !== 'PENDING') {
       return res.status(400).json({
         success: false,
@@ -126,7 +130,7 @@ export async function hireFreelancer(req: Request, res: Response, next: NextFunc
             title: 'Project Proposal Update',
             message: `Another proposal was selected for "${application.project.title}". Thank you for applying.`,
             type: 'APPLICATION_REJECTED',
-            link: `/freelancer/applications`,
+            link: `/freelancer/dashboard`,
           },
         });
       }
@@ -167,12 +171,12 @@ export async function completeContract(req: Request, res: Response, next: NextFu
       return res.status(400).json({ success: false, error: 'Contract is not currently active' });
     }
 
-    await prisma.$transaction(async (tx) => {
-      // 1. Complete contract
-      await tx.contract.update({
-        where: { id: contractId },
+    const completed = await prisma.$transaction(async (tx) => {
+      const claim = await tx.contract.updateMany({
+        where: { id: contractId, clientId: client.id, status: 'ACTIVE' },
         data: { status: 'COMPLETED', completedAt: new Date() },
       });
+      if (claim.count !== 1) return false;
 
       // 2. Complete project
       await tx.project.update({
@@ -196,7 +200,10 @@ export async function completeContract(req: Request, res: Response, next: NextFu
           link: `/workspace/projects/${contract.projectId}`,
         },
       });
+      return true;
     });
+
+    if (!completed) return res.status(409).json({ success: false, error: 'Contract was already completed' });
 
     return res.json({ success: true, message: 'Contract completed successfully' });
   } catch (err) {
