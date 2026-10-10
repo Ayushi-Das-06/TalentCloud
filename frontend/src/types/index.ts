@@ -140,6 +140,7 @@ export interface Task {
 
 export interface ProjectFile {
   id: string;
+  uploaderId: string;
   fileKey: string;
   fileName: string;
   fileSize: number;

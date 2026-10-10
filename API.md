@@ -13,7 +13,7 @@ Base path: `/api/v1`. Protected routes accept `Authorization: Bearer <token>`; l
 | Tasks | `GET /tasks/project/:projectId`, `POST /tasks`, `PATCH /tasks/:taskId/status`, `DELETE /tasks/:taskId` | Authenticated project members; owner/admin for deletion |
 | Reviews | `POST /reviews`, `GET /reviews/user/:userId` | Participant review writes; public review reads |
 | Notifications | `GET /notifications`, `PATCH /notifications/:id/read`, `POST /notifications/read-all` | Signed-in user; records scoped to self |
-| Files | `POST /files/resume`, `POST /files/projects/:projectId`, `GET /files/resume/status`, `GET /files/:fileKey` | Freelancer resume upload/status; project participants upload/download task attachments |
+| Files | `POST /files/resume`, `POST /files/projects/:projectId`, `DELETE /files/projects/:projectId/:fileId`, `GET /files/resume/status`, `GET /files/:fileKey` | Freelancer resume upload/status; project participants upload/download; uploader, project owner, or admin can delete project files |
 | Intelligent | `GET /intelligent/match/project/:projectId`, `GET /intelligent/match/freelancer`, `POST /intelligent/skill-gap`, `POST /intelligent/estimate` | Project owner/admin for candidates; freelancer for recommendations/gaps; estimator public |
 | Admin | `GET /admin/stats`, `GET /admin/queue`, `POST /admin/queue/burst`, `POST /admin/queue/retry/:jobId` | ADMIN only |
 

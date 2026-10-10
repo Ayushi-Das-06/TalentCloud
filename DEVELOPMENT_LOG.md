@@ -15,9 +15,10 @@
 - Implemented the BullMQ consumer lifecycle in the standalone worker and retry handling. Added AWS SDK S3 and SQS adapters; live cloud calls remain unverified without AWS access.
 - Added DOCX resume text extraction using JSZip/XML handling and limited upload types to formats the parser supports. Removed Mammoth after its dependency audit identified a moderate advisory.
 - Added project/task file upload and workspace links, plus API access-control, local path traversal, and DOCX extraction regression tests; updated Docker build files and project documentation.
-- Verified PostgreSQL and SQLite schema generation/build paths, backend build and 15 tests, and frontend production build. See `TESTING.md` for limitations and dependency audit results.
+- Added project file deletion for the uploader, project owner, or administrator, with local/S3 object cleanup and a workspace delete control.
+- Verified PostgreSQL and SQLite schema generation/build paths, backend build and 17 tests, and frontend production build. See `TESTING.md` for limitations and dependency audit results.
 
 ## Open work
 
-- Add attachment deletion/retention, complete integration/E2E coverage, and actual Docker/AWS deployment validation.
+- Complete integration/E2E coverage and actual Docker/AWS deployment validation.
 - Resolve remaining Prisma config dependency advisories through a compatible, verified Prisma upgrade.

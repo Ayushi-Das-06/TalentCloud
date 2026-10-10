@@ -31,7 +31,7 @@ Last audited: 2026-10-10. “Implemented” means present in the repository; “
 - [x] Local/S3 storage adapters support private file retrieval with ownership checks and path containment.
 - [x] Resume upload is authenticated, limited to 10 MB, and restricted to PDF, DOCX, TXT, and Markdown.
 - [x] Resume analysis extracts text from PDF, DOCX, and text files and queues skill analysis.
-- [x] Project/task attachment upload and task-level file links; deletion API remains outstanding.
+- [x] Project/task attachment upload, task-level file links, and authorized deletion with local/S3 storage cleanup.
 - [ ] Presigned S3 downloads; current API streams objects through authenticated routes.
 - [x] Explainable weighted freelancer/project matching, canonical skill aliases, skill-gap analysis, and budget/deadline estimation.
 - [x] Client matching is restricted to the project owner or admin; freelancer recommendations are private to the signed-in freelancer.

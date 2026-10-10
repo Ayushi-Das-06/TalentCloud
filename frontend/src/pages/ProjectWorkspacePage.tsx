@@ -16,6 +16,7 @@ import {
   AlertCircle,
   FileText,
   User,
+  Trash2,
 } from 'lucide-react';
 
 export function ProjectWorkspacePage() {
@@ -86,6 +87,12 @@ export function ProjectWorkspacePage() {
       formData.append('category', 'DELIVERABLE');
       return apiFetch(`/files/projects/${projectId}`, { method: 'POST', body: formData });
     },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['projectTasks', projectId] }),
+  });
+
+  const deleteFileMutation = useMutation({
+    mutationFn: ({ fileId }: { fileId: string }) =>
+      apiFetch(`/files/projects/${projectId}/${fileId}`, { method: 'DELETE' }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['projectTasks', projectId] }),
   });
 
@@ -226,16 +233,29 @@ export function ProjectWorkspacePage() {
                     {task.files && task.files.length > 0 && (
                       <div className="space-y-1 border-t border-slate-100 pt-2">
                         {task.files.map((file) => (
-                          <a
-                            key={file.id}
-                            href={`/api/v1/files/${encodeURIComponent(file.fileKey)}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex items-center gap-1.5 text-[11px] text-brand-700 hover:underline"
-                          >
-                            <FileText className="w-3.5 h-3.5 shrink-0" />
-                            <span className="truncate">{file.fileName}</span>
-                          </a>
+                          <div key={file.id} className="flex items-center gap-2 min-w-0">
+                            <a
+                              href={`/api/v1/files/${encodeURIComponent(file.fileKey)}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex min-w-0 flex-1 items-center gap-1.5 text-[11px] text-brand-700 hover:underline"
+                            >
+                              <FileText className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">{file.fileName}</span>
+                            </a>
+                            {(user?.id === file.uploaderId || isClient || user?.role === 'ADMIN') && (
+                              <button
+                                type="button"
+                                title="Delete attachment"
+                                aria-label={`Delete ${file.fileName}`}
+                                disabled={deleteFileMutation.isPending}
+                                onClick={() => deleteFileMutation.mutate({ fileId: file.id })}
+                                className="shrink-0 text-slate-400 hover:text-red-600 disabled:opacity-50"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
                         ))}
                       </div>
                     )}

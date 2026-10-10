@@ -41,6 +41,11 @@ describe('API access controls', () => {
     expect(response.status).toBe(401);
   });
 
+  it('requires authentication before project attachment deletion', async () => {
+    const response = await fetch(`${baseUrl}/files/projects/example/file-example`, { method: 'DELETE' });
+    expect(response.status).toBe(401);
+  });
+
   it('exposes the API health check without authentication', async () => {
     const response = await fetch(`${baseUrl}/health`);
     expect(response.status).toBe(200);

@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { Readable } from 'stream';
 import { v4 as uuidv4 } from 'uuid';
-import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { config } from '../config/index.js';
 
 export interface StoredFileMetadata {
@@ -124,6 +124,26 @@ class StorageService {
     if (!fullPath) return null;
     if (!fs.existsSync(fullPath)) return null;
     return await fs.promises.readFile(fullPath);
+  }
+
+  public async deleteFile(fileKey: string): Promise<boolean> {
+    if (config.storage.driver === 's3') {
+      if (!this.isSafeKey(fileKey)) return false;
+      await this.s3!.send(new DeleteObjectCommand({ Bucket: config.storage.s3.bucket, Key: fileKey }));
+      return true;
+    }
+
+    const fullPath = this.resolveLocalPath(fileKey);
+    if (!fullPath) return false;
+    try {
+      await fs.promises.unlink(fullPath);
+      return true;
+    } catch (error) {
+      if (error && typeof error === 'object' && 'code' in error && (error as NodeJS.ErrnoException).code === 'ENOENT') {
+        return false;
+      }
+      throw error;
+    }
   }
 
   private resolveLocalPath(fileKey: string): string | null {

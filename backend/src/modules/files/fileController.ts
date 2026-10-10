@@ -229,3 +229,29 @@ export async function downloadFile(req: Request, res: Response, next: NextFuncti
     next(err);
   }
 }
+
+export async function deleteProjectFile(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (!req.user) return res.status(401).json({ success: false, error: 'Authentication required' });
+    const { projectId, fileId } = req.params;
+    const file = await prisma.projectFile.findFirst({
+      where: { id: fileId, projectId },
+      include: { project: { include: { client: { select: { userId: true } } } } },
+    });
+    if (!file) return res.status(404).json({ success: false, error: 'Project file not found' });
+
+    const isAdmin = req.user.role === 'ADMIN';
+    const isProjectOwner = file.project.client.userId === req.user.id;
+    const isUploader = file.uploaderId === req.user.id;
+    if (!isAdmin && !isProjectOwner && !isUploader) {
+      return res.status(403).json({ success: false, error: 'Only the uploader, project owner, or an administrator can delete this file' });
+    }
+
+    // Remove the storage object first so a storage failure does not leave a live database link to a missing file.
+    await storageService.deleteFile(file.fileKey);
+    await prisma.projectFile.delete({ where: { id: file.id } });
+    return res.json({ success: true, message: 'Project file deleted' });
+  } catch (err) {
+    next(err);
+  }
+}
