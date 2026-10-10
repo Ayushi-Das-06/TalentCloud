@@ -7,7 +7,7 @@
 
 ## 2026-10-10 — Repository access and implementation audit
 
-- Confirmed local Codex mode, project path, clean `main` checkout, and read access to `origin/main` at the local commit. No remote changes were fetched or overwritten.
+- Confirmed local Codex mode and inspected the existing project checkout. Fetched the private `codex/talentcloud-audit` branch from GitHub; changes were committed and pushed as fast-forwards without touching `main`.
 - Read the existing README, plan, development log, decisions, manifests, schemas, route modules, and implementation files.
 - Corrected backend type definitions to match Express 4; generated the Prisma client from the checked-in local schema.
 - Added ownership checks for candidate matching, file downloads, task access, and reviews. Locked admin routes behind the ADMIN role and removed private emails, attachments, and unrelated contracts from public project responses.
@@ -23,6 +23,7 @@
 - Added a repeatable `npm run test:e2e` smoke that builds a disposable SQLite database and exercises registration through review, including concurrent hiring and in-process resume-worker processing.
 - Added a local SQLite initialization helper. `npm run prisma:push` creates an empty file when needed before running Prisma; verified it on a clean ignored database. The existing seed script also passed on a separate disposable database.
 - Verified both Prisma schema validations and client generations, backend build and 30 regression tests, SQLite E2E, and frontend production build. Docker/Compose and live AWS remain unverified.
+- Added lazy-loaded route modules for every page. The frontend production build now emits a 232.52 kB initial JavaScript bundle and a separate 372.43 kB charting bundle.
 
 ## Open work
 

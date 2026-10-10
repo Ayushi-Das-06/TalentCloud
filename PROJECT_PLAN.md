@@ -51,7 +51,7 @@ Last audited: 2026-10-10. “Implemented” means present in the repository; “
 ## Frontend and quality
 
 - [x] Landing, discovery, project details, client/freelancer dashboards, proposal review, workspace with task attachments, skill-gap, estimator, and admin queue screens exist.
-- [x] Frontend production build passes. Vite reports a main JavaScript chunk around 700 kB; route-level code splitting is still needed.
+- [x] Frontend production build passes with route-level code splitting. The initial JavaScript chunk is about 233 kB; the Recharts chunk is about 372 kB.
 - [x] Backend TypeScript build passes; current test count is recorded in `TESTING.md`.
 - [ ] Browser-driven end-to-end coverage and accessibility review.
 - [ ] Dependency audit is clean. The current report retains high-severity Prisma config dependency advisories; see `TESTING.md`.

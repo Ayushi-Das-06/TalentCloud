@@ -1,27 +1,27 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Navbar } from './components/layout/Navbar.js';
 import { Footer } from './components/layout/Footer.js';
 import { ProtectedRoute } from './components/common/ProtectedRoute.js';
 import { useAuth } from './context/AuthContext.js';
 
-// Pages
-import { LandingPage } from './pages/LandingPage.js';
-import { LoginPage } from './pages/LoginPage.js';
-import { RegisterPage } from './pages/RegisterPage.js';
-import { ProjectDiscoveryPage } from './pages/ProjectDiscoveryPage.js';
-import { ProjectDetailsPage } from './pages/ProjectDetailsPage.js';
-import { FreelancerDiscoveryPage } from './pages/FreelancerDiscoveryPage.js';
-import { FreelancerDashboardPage } from './pages/FreelancerDashboardPage.js';
-import { ClientDashboardPage } from './pages/ClientDashboardPage.js';
-import { CreateProjectPage } from './pages/CreateProjectPage.js';
-import { ProjectApplicationsPage } from './pages/ProjectApplicationsPage.js';
-import { ProjectWorkspacePage } from './pages/ProjectWorkspacePage.js';
-import { SkillGapPage } from './pages/SkillGapPage.js';
-import { BudgetEstimatorPage } from './pages/BudgetEstimatorPage.js';
-import { QueueDemoPage } from './pages/QueueDemoPage.js';
-import { ProfilePage } from './pages/ProfilePage.js';
-import { FreelancerProfilePage } from './pages/FreelancerProfilePage.js';
+// Keep route-specific screens out of the initial JavaScript payload.
+const LandingPage = lazy(() => import('./pages/LandingPage.js').then((module) => ({ default: module.LandingPage })));
+const LoginPage = lazy(() => import('./pages/LoginPage.js').then((module) => ({ default: module.LoginPage })));
+const RegisterPage = lazy(() => import('./pages/RegisterPage.js').then((module) => ({ default: module.RegisterPage })));
+const ProjectDiscoveryPage = lazy(() => import('./pages/ProjectDiscoveryPage.js').then((module) => ({ default: module.ProjectDiscoveryPage })));
+const ProjectDetailsPage = lazy(() => import('./pages/ProjectDetailsPage.js').then((module) => ({ default: module.ProjectDetailsPage })));
+const FreelancerDiscoveryPage = lazy(() => import('./pages/FreelancerDiscoveryPage.js').then((module) => ({ default: module.FreelancerDiscoveryPage })));
+const FreelancerDashboardPage = lazy(() => import('./pages/FreelancerDashboardPage.js').then((module) => ({ default: module.FreelancerDashboardPage })));
+const ClientDashboardPage = lazy(() => import('./pages/ClientDashboardPage.js').then((module) => ({ default: module.ClientDashboardPage })));
+const CreateProjectPage = lazy(() => import('./pages/CreateProjectPage.js').then((module) => ({ default: module.CreateProjectPage })));
+const ProjectApplicationsPage = lazy(() => import('./pages/ProjectApplicationsPage.js').then((module) => ({ default: module.ProjectApplicationsPage })));
+const ProjectWorkspacePage = lazy(() => import('./pages/ProjectWorkspacePage.js').then((module) => ({ default: module.ProjectWorkspacePage })));
+const SkillGapPage = lazy(() => import('./pages/SkillGapPage.js').then((module) => ({ default: module.SkillGapPage })));
+const BudgetEstimatorPage = lazy(() => import('./pages/BudgetEstimatorPage.js').then((module) => ({ default: module.BudgetEstimatorPage })));
+const QueueDemoPage = lazy(() => import('./pages/QueueDemoPage.js').then((module) => ({ default: module.QueueDemoPage })));
+const ProfilePage = lazy(() => import('./pages/ProfilePage.js').then((module) => ({ default: module.ProfilePage })));
+const FreelancerProfilePage = lazy(() => import('./pages/FreelancerProfilePage.js').then((module) => ({ default: module.FreelancerProfilePage })));
 
 function NotFoundPage() {
   return (
@@ -42,6 +42,7 @@ export function App() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1">
+        <Suspense fallback={<div className="min-h-[50vh] flex items-center justify-center text-slate-500" role="status">Loading page…</div>}>
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
@@ -119,6 +120,7 @@ export function App() {
           {/* Fallback */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        </Suspense>
       </main>
       <Footer />
     </div>

@@ -31,7 +31,7 @@ Last reviewed: 2026-10-10. Completion estimates are approximate, based on the re
 ## In progress
 
 - Broader API edge-case integration, browser-driven E2E, and PostgreSQL lifecycle coverage.
-- Accessibility review, API pagination consistency outside public discovery, and frontend route-level code splitting (current main bundle is about 719 kB minified).
+- Accessibility review and API pagination consistency outside public discovery.
 - Production-grade distributed rate limiting, file malware scanning/retention policy, infrastructure as code, observability dashboards, and recovery rehearsal.
 - Compatible fix for remaining Prisma dependency advisories.
 
@@ -51,4 +51,4 @@ Fresh SQLite initialization now works through `npm run prisma:push`, which creat
 
 ## Current estimate
 
-Approximately **80–85% of the requested application implementation** is present. Local SQLite lifecycle coverage now passes. Docker execution, PostgreSQL lifecycle, browser E2E, and AWS infrastructure remain unverified or absent. This is an engineering estimate, not a measured test-coverage percentage.
+Approximately **80–85% of the requested application implementation** is present. Local SQLite lifecycle coverage passes and route-level splitting brings the initial JavaScript chunk below the Vite advisory threshold. Docker execution, PostgreSQL lifecycle, browser E2E, and AWS infrastructure remain unverified or absent. This is an engineering estimate, not a measured test-coverage percentage.

@@ -21,7 +21,7 @@ npm run build
 - Backend test suite: 7 files, 30 tests passed. Coverage includes production secret config, public project visibility/query validation, auth rate limits, upload signatures, storage traversal/deletion, in-memory queue success/retry/exhaustion, intelligent features, DOCX/text parsing, and API access gates.
 - `npm run prisma:push` successfully initialized a fresh ignored SQLite database using the empty-file helper. The seed script then ran against another disposable ignored database, producing 6 users, 3 projects, 2 applications, and 2 contracts.
 - `npm run test:e2e` passed against a clean temporary SQLite database: registration, project creation, competing applications, concurrent hire with exactly one contract, task access, attachment upload/access/deletion, public visibility, resume upload/worker completion, skill confirmation, contract completion, and review.
-- Frontend TypeScript check and production build: passed. Vite reports the generated main JavaScript chunk is 719.28 kB minified, above its 500 kB advisory threshold.
+- Frontend TypeScript check and production build: passed. Route-level splitting reduced the initial JavaScript chunk from 719.28 kB to 232.52 kB minified; Recharts is isolated in a 372.43 kB chunk. Both are below Vite's 500 kB advisory threshold.
 - GitHub access check: authenticated fetch succeeded for the private repository. Before the implementation commit, `codex/talentcloud-audit` matched its upstream; after the commit, the verified commit was pushed as a fast-forward and local/upstream now point to the same revision.
 
 ## Not verified
