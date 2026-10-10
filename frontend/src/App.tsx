@@ -49,7 +49,14 @@ export function App() {
           <Route path="/projects/:id" element={<ProjectDetailsPage />} />
           <Route path="/freelancers" element={<FreelancerDiscoveryPage />} />
           <Route path="/estimator" element={<BudgetEstimatorPage />} />
-          <Route path="/queue-demo" element={<QueueDemoPage />} />
+          <Route
+            path="/queue-demo"
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <QueueDemoPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Freelancer Routes */}
           <Route

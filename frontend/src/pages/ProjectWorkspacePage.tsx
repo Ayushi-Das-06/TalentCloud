@@ -78,6 +78,17 @@ export function ProjectWorkspacePage() {
     },
   });
 
+  const uploadFileMutation = useMutation({
+    mutationFn: ({ taskId, file }: { taskId: string; file: File }) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('taskId', taskId);
+      formData.append('category', 'DELIVERABLE');
+      return apiFetch(`/files/projects/${projectId}`, { method: 'POST', body: formData });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['projectTasks', projectId] }),
+  });
+
   // Complete Project Mutation (Client only)
   const completeProjectMutation = useMutation({
     mutationFn: (contractId: string) =>
@@ -211,6 +222,39 @@ export function ProjectWorkspacePage() {
                     {task.description && (
                       <p className="text-[11px] text-slate-500 line-clamp-2">{task.description}</p>
                     )}
+
+                    {task.files && task.files.length > 0 && (
+                      <div className="space-y-1 border-t border-slate-100 pt-2">
+                        {task.files.map((file) => (
+                          <a
+                            key={file.id}
+                            href={`/api/v1/files/${encodeURIComponent(file.fileKey)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1.5 text-[11px] text-brand-700 hover:underline"
+                          >
+                            <FileText className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate">{file.fileName}</span>
+                          </a>
+                        ))}
+                      </div>
+                    )}
+
+                    <label className="inline-flex cursor-pointer items-center gap-1.5 text-[11px] font-semibold text-slate-600 hover:text-brand-700">
+                      <PlusCircle className="w-3.5 h-3.5" />
+                      {uploadFileMutation.isPending ? 'Uploading…' : 'Attach file'}
+                      <input
+                        type="file"
+                        accept=".pdf,.docx,.txt,.md"
+                        className="sr-only"
+                        disabled={uploadFileMutation.isPending}
+                        onChange={(event) => {
+                          const file = event.currentTarget.files?.[0];
+                          if (file) uploadFileMutation.mutate({ taskId: task.id, file });
+                          event.currentTarget.value = '';
+                        }}
+                      />
+                    </label>
 
                     {/* Status Advance Controls */}
                     <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">

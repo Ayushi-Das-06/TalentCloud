@@ -9,7 +9,7 @@ import { authenticateToken, requireRole } from '../../middleware/auth.js';
 
 const router = Router();
 
-// Allow access to authenticated users for viva/evaluation demonstrations or admins
+router.use(authenticateToken, requireRole(['ADMIN']));
 router.get('/stats', getSystemStats);
 router.get('/queue', getQueueDashboard);
 router.post('/queue/burst', triggerBurstTest);

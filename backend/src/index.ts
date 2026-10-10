@@ -13,8 +13,8 @@ async function bootstrap() {
     console.warn('[Database] Database connection check encountered an issue. Ensure migrations/seed have been run.');
   }
 
-  // Initialize async worker handlers inside the same runtime for single-command simplicity
-  initializeWorkerHandlers();
+  // The in-memory adapter needs an in-process consumer. BullMQ consumption belongs to worker.ts.
+  if (config.queue.driver === 'memory') initializeWorkerHandlers();
 
   app.listen(config.port, () => {
     console.log(`[Server] API Server listening on http://localhost:${config.port}`);

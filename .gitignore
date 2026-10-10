@@ -10,3 +10,5 @@ coverage/
 .venv/
 __pycache__/
 *.log
+backend/prisma/talentcloud-audit*.db
+backend/prisma/talentcloud.db

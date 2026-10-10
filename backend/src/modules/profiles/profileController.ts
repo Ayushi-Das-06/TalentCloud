@@ -44,7 +44,7 @@ export async function getFreelancers(req: Request, res: Response, next: NextFunc
         skip,
         take,
         include: {
-          user: { select: { id: true, name: true, email: true, avatarUrl: true } },
+          user: { select: { id: true, name: true, avatarUrl: true } },
           skills: { include: { skill: true } },
         },
         orderBy: [{ averageRating: 'desc' }, { completedProjectsCount: 'desc' }],
@@ -73,7 +73,7 @@ export async function getFreelancerById(req: Request, res: Response, next: NextF
     const profile = await prisma.freelancerProfile.findUnique({
       where: { id },
       include: {
-        user: { select: { id: true, name: true, email: true, avatarUrl: true, createdAt: true } },
+        user: { select: { id: true, name: true, avatarUrl: true, createdAt: true } },
         skills: { include: { skill: true } },
         contracts: {
           where: { status: 'COMPLETED' },
@@ -223,7 +223,7 @@ export async function getClientProfile(req: Request, res: Response, next: NextFu
     const client = await prisma.clientProfile.findUnique({
       where: { id },
       include: {
-        user: { select: { id: true, name: true, email: true, avatarUrl: true, createdAt: true } },
+        user: { select: { id: true, name: true, avatarUrl: true, createdAt: true } },
         projects: {
           where: { status: { in: ['OPEN', 'IN_PROGRESS', 'COMPLETED'] } },
           orderBy: { createdAt: 'desc' },

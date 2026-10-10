@@ -6,9 +6,9 @@ export async function submitReview(req: Request, res: Response, next: NextFuncti
     if (!req.user) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
     const { projectId, revieweeId, rating, feedback } = req.body;
-    const numRating = parseInt(rating, 10);
+    const numRating = Number(rating);
 
-    if (numRating < 1 || numRating > 5) {
+    if (!Number.isInteger(numRating) || numRating < 1 || numRating > 5) {
       return res.status(400).json({ success: false, error: 'Rating must be an integer between 1 and 5' });
     }
 
@@ -23,6 +23,22 @@ export async function submitReview(req: Request, res: Response, next: NextFuncti
     if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
     if (project.status !== 'COMPLETED') {
       return res.status(400).json({ success: false, error: 'Reviews can only be submitted for completed projects' });
+    }
+
+    const contract = project.contracts[0];
+    if (!contract) return res.status(400).json({ success: false, error: 'A completed contract is required before reviewing' });
+    const freelancerUserId = contract.freelancer.userId;
+    const participants = new Set([project.client.userId, freelancerUserId]);
+    if (
+      !participants.has(req.user.id) ||
+      typeof revieweeId !== 'string' ||
+      !participants.has(revieweeId) ||
+      revieweeId === req.user.id
+    ) {
+      return res.status(403).json({ success: false, error: 'Only project participants can review one another' });
+    }
+    if (typeof feedback !== 'string' || feedback.trim().length < 3 || feedback.length > 2000) {
+      return res.status(400).json({ success: false, error: 'Feedback must be between 3 and 2000 characters' });
     }
 
     // Check duplicate

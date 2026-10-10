@@ -135,6 +135,16 @@ export interface Task {
   status: 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'COMPLETED';
   dueDate?: string | null;
   createdAt: string;
+  files?: ProjectFile[];
+}
+
+export interface ProjectFile {
+  id: string;
+  fileKey: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  category: string;
 }
 
 export interface NotificationItem {

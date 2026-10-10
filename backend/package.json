@@ -10,12 +10,16 @@
     "start": "node dist/index.js",
     "start:worker": "node dist/worker.js",
     "prisma:generate": "prisma generate",
+    "prisma:generate:postgres": "prisma generate --schema prisma/schema.postgres.prisma",
     "prisma:migrate": "prisma migrate dev",
     "prisma:push": "prisma db push",
+    "prisma:push:postgres": "prisma db push --schema prisma/schema.postgres.prisma",
     "seed": "tsx prisma/seed.ts",
     "test": "vitest run"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1149.0",
+    "@aws-sdk/client-sqs": "^3.1149.0",
     "@prisma/client": "^6.4.1",
     "bcryptjs": "^3.0.2",
     "bullmq": "^5.41.0",
@@ -26,6 +30,7 @@
     "helmet": "^8.0.0",
     "ioredis": "^5.6.0",
     "jsonwebtoken": "^9.0.2",
+    "jszip": "^3.10.2",
     "multer": "^1.4.5-lts.1",
     "pdf-parse": "^1.1.1",
     "uuid": "^11.1.0",
@@ -35,7 +40,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.0",
+    "@types/express": "^4.17.25",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/multer": "^1.4.12",
     "@types/node": "^22.13.9",
@@ -44,6 +49,6 @@
     "prisma": "^6.4.1",
     "tsx": "^4.19.3",
     "typescript": "^5.7.3",
-    "vitest": "^3.0.7"
+    "vitest": "^5.0.3"
   }
 }

@@ -113,6 +113,8 @@ export function initializeWorkerHandlers() {
       timestamp: new Date().toISOString(),
     };
   });
+
+  queueService.startWorker();
 }
 
 // Standalone worker runner if invoked directly

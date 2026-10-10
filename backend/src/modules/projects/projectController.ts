@@ -100,15 +100,9 @@ export async function getProjectById(req: Request, res: Response, next: NextFunc
       where: { id },
       include: {
         client: {
-          include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
+          include: { user: { select: { id: true, name: true, avatarUrl: true } } },
         },
         skills: { include: { skill: true } },
-        attachments: true,
-        contracts: {
-          include: {
-            freelancer: { include: { user: { select: { name: true, email: true, avatarUrl: true } } } },
-          },
-        },
         _count: { select: { applications: true, tasks: true } },
       },
     });
@@ -117,7 +111,23 @@ export async function getProjectById(req: Request, res: Response, next: NextFunc
       return res.status(404).json({ success: false, error: 'Project not found' });
     }
 
-    return res.json({ success: true, data: project });
+    let contracts: Awaited<ReturnType<typeof prisma.contract.findMany>> = [];
+    const requester = req.user;
+    const isClientOwner = requester?.role === 'CLIENT' && requester.clientProfileId === project.clientId;
+    if (requester?.role === 'ADMIN' || isClientOwner || requester?.role === 'FREELANCER') {
+      const where = {
+        projectId: project.id,
+        ...(requester.role === 'FREELANCER' ? { freelancerProfileId: requester.freelancerProfileId || '__none__' } : {}),
+      };
+      contracts = await prisma.contract.findMany({
+        where,
+        include: {
+          freelancer: { include: { user: { select: { name: true, avatarUrl: true } } } },
+        },
+      });
+    }
+
+    return res.json({ success: true, data: { ...project, contracts } });
   } catch (err) {
     next(err);
   }
@@ -214,6 +224,9 @@ export async function updateProject(req: Request, res: Response, next: NextFunct
     }
 
     const { title, description, category, minBudget, maxBudget, status, deadline } = req.body;
+    if (status !== undefined && (status !== 'CANCELLED' || project.status !== 'OPEN')) {
+      return res.status(400).json({ success: false, error: 'Only open projects can be cancelled here; hiring and completion manage other state changes' });
+    }
 
     const updated = await prisma.project.update({
       where: { id },

@@ -424,8 +424,8 @@ model BackgroundJob {
   id          String    @id @default(uuid())
   jobType     String
   status      JobStatus @default(PENDING)
-  payload     Json
-  result      Json?
+  payload     String    @default("{}") @db.Text
+  result      String?   @db.Text
   error       String?   @db.Text
   retryCount  Int       @default(0)
   maxRetries  Int       @default(3)

@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { normalizeSkill, calculateMatch, CandidateProfile, TargetProject } from './matchingEngine.js';
-import { extractSkillsFromText } from './resumeParser.js';
+import { extractSkillsFromText, parseResumeText } from './resumeParser.js';
 import { analyzeSkillGap } from './skillGapAnalyzer.js';
 import { estimateBudgetAndTimeline } from './budgetEstimator.js';
+import JSZip from 'jszip';
 
 describe('Intelligent Feature 1: Matching Engine & Skill Normalization', () => {
   it('correctly normalizes canonical skill aliases', () => {
@@ -82,6 +83,24 @@ describe('Intelligent Feature 1: Matching Engine & Skill Normalization', () => {
 });
 
 describe('Intelligent Feature 2: Resume Parser & Keyword Extractor', () => {
+  it('reads text files and rejects formats without a parser', async () => {
+    const content = Buffer.from('TypeScript and React');
+    await expect(parseResumeText(content, 'text/plain')).resolves.toBe('TypeScript and React');
+    await expect(parseResumeText(content, 'image/png')).rejects.toThrow('Unsupported resume format');
+  });
+
+  it('extracts paragraph text and XML entities from DOCX content', async () => {
+    const archive = new JSZip();
+    archive.file(
+      'word/document.xml',
+      '<w:document xmlns:w="urn:test"><w:body><w:p><w:r><w:t>TypeScript &amp; React</w:t></w:r></w:p></w:body></w:document>',
+    );
+    const docx = await archive.generateAsync({ type: 'nodebuffer' });
+    await expect(
+      parseResumeText(docx, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'),
+    ).resolves.toBe('TypeScript & React');
+  });
+
   it('extracts known skills and calculates confidence scores', () => {
     const sampleResumeText = `
       John Doe - Senior Software Engineer

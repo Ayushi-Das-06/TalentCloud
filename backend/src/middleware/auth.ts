@@ -51,6 +51,10 @@ export async function authenticateToken(req: Request, res: Response, next: NextF
       return res.status(403).json({ success: false, error: 'Account has been suspended' });
     }
 
+    if (user.role !== 'FREELANCER' && user.role !== 'CLIENT' && user.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, error: 'Account has an unsupported role' });
+    }
+
     req.user = {
       id: user.id,
       email: user.email,
@@ -63,6 +67,14 @@ export async function authenticateToken(req: Request, res: Response, next: NextF
   } catch (err: any) {
     return res.status(401).json({ success: false, error: 'Invalid or expired authentication token' });
   }
+}
+
+export function optionalAuthenticateToken(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  const hasBearerToken = !!authHeader?.startsWith('Bearer ');
+  const hasCookieToken = !!req.cookies?.token;
+  if (!hasBearerToken && !hasCookieToken) return next();
+  return authenticateToken(req, res, next);
 }
 
 export function requireRole(allowedRoles: ('FREELANCER' | 'CLIENT' | 'ADMIN')[]) {

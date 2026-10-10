@@ -1,8 +1,25 @@
 import { Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
 import { prisma } from '../../db/prisma.js';
 import { calculateMatch, CandidateProfile, TargetProject } from './matchingEngine.js';
 import { analyzeSkillGap } from './skillGapAnalyzer.js';
 import { estimateBudgetAndTimeline } from './budgetEstimator.js';
+
+export const estimateSchema = z.object({
+  category: z.string().trim().min(1).max(80).default('Web Development'),
+  complexity: z.enum(['LOW', 'MEDIUM', 'HIGH']).default('MEDIUM'),
+  experienceLevel: z.enum(['ENTRY', 'INTERMEDIATE', 'EXPERT']).default('INTERMEDIATE'),
+  tasksCount: z.coerce.number().int().min(1).max(100).optional(),
+  skillsCount: z.coerce.number().int().min(1).max(100).optional(),
+});
+
+function toExperienceLevel(value: string): CandidateProfile['experienceLevel'] {
+  return value === 'ENTRY' || value === 'EXPERT' ? value : 'INTERMEDIATE';
+}
+
+function toAvailability(value: string): CandidateProfile['availability'] {
+  return value === 'PART_TIME' || value === 'NOT_AVAILABLE' ? value : 'FULL_TIME';
+}
 
 export async function matchFreelancersForProject(req: Request, res: Response, next: NextFunction) {
   try {
@@ -16,12 +33,15 @@ export async function matchFreelancersForProject(req: Request, res: Response, ne
     });
 
     if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
+    if (req.user?.role !== 'ADMIN' && project.clientId !== req.user?.clientProfileId) {
+      return res.status(403).json({ success: false, error: 'You are not authorized to view matches for this project' });
+    }
 
     const targetProject: TargetProject = {
       id: project.id,
       title: project.title,
       category: project.category,
-      experienceLevel: project.experienceLevel,
+      experienceLevel: toExperienceLevel(project.experienceLevel),
       minBudget: Number(project.minBudget),
       maxBudget: Number(project.maxBudget),
       requiredSkills: project.skills.map((s) => s.skill.name),
@@ -42,9 +62,9 @@ export async function matchFreelancersForProject(req: Request, res: Response, ne
         name: f.user.name,
         headline: f.headline,
         experienceYears: f.experienceYears,
-        experienceLevel: f.experienceLevel,
+        experienceLevel: toExperienceLevel(f.experienceLevel),
         hourlyRate: f.hourlyRate ? Number(f.hourlyRate) : null,
-        availability: f.availability,
+        availability: toAvailability(f.availability),
         averageRating: Number(f.averageRating),
         completedProjectsCount: f.completedProjectsCount,
         skills: f.skills.map((s) => ({
@@ -109,9 +129,9 @@ export async function matchProjectsForFreelancer(req: Request, res: Response, ne
       name: freelancer.user.name,
       headline: freelancer.headline,
       experienceYears: freelancer.experienceYears,
-      experienceLevel: freelancer.experienceLevel,
+      experienceLevel: toExperienceLevel(freelancer.experienceLevel),
       hourlyRate: freelancer.hourlyRate ? Number(freelancer.hourlyRate) : null,
-      availability: freelancer.availability,
+      availability: toAvailability(freelancer.availability),
       averageRating: Number(freelancer.averageRating),
       completedProjectsCount: freelancer.completedProjectsCount,
       skills: freelancer.skills.map((s) => ({ name: s.skill.name })),
@@ -130,7 +150,7 @@ export async function matchProjectsForFreelancer(req: Request, res: Response, ne
         id: p.id,
         title: p.title,
         category: p.category,
-        experienceLevel: p.experienceLevel,
+        experienceLevel: toExperienceLevel(p.experienceLevel),
         minBudget: Number(p.minBudget),
         maxBudget: Number(p.maxBudget),
         requiredSkills: p.skills.map((s) => s.skill.name),
@@ -197,14 +217,14 @@ export async function getSkillGapAnalysis(req: Request, res: Response, next: Nex
 
 export async function getEstimate(req: Request, res: Response, next: NextFunction) {
   try {
-    const { category, complexity, experienceLevel, tasksCount, skillsCount } = req.body;
+    const { category, complexity, experienceLevel, tasksCount, skillsCount } = estimateSchema.parse(req.body);
 
     const estimate = estimateBudgetAndTimeline({
       category: category || 'Web Development',
       complexity: complexity || 'MEDIUM',
       experienceLevel: experienceLevel || 'INTERMEDIATE',
-      tasksCount: tasksCount ? parseInt(tasksCount, 10) : undefined,
-      skillsCount: skillsCount ? parseInt(skillsCount, 10) : undefined,
+      tasksCount,
+      skillsCount,
     });
 
     return res.json({ success: true, data: estimate });

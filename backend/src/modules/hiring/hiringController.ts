@@ -48,6 +48,12 @@ export async function hireFreelancer(req: Request, res: Response, next: NextFunc
 
     // Execute atomic transaction for contract creation, application acceptance, and state transitions
     const result = await prisma.$transaction(async (tx) => {
+      const projectClaim = await tx.project.updateMany({
+        where: { id: application.projectId, status: 'OPEN' },
+        data: { status: 'IN_PROGRESS' },
+      });
+      if (projectClaim.count !== 1) return null;
+
       // 1. Create contract
       const contract = await tx.contract.create({
         data: {
@@ -86,13 +92,7 @@ export async function hireFreelancer(req: Request, res: Response, next: NextFunc
         data: { status: 'REJECTED' },
       });
 
-      // 4. Update project status to IN_PROGRESS
-      await tx.project.update({
-        where: { id: application.projectId },
-        data: { status: 'IN_PROGRESS' },
-      });
-
-      // 5. Create default kick-off task
+      // 4. Create default kick-off task
       await tx.task.create({
         data: {
           projectId: application.projectId,
@@ -107,7 +107,7 @@ export async function hireFreelancer(req: Request, res: Response, next: NextFunc
         },
       });
 
-      // 6. Notify hired freelancer
+      // 5. Notify hired freelancer
       await tx.notification.create({
         data: {
           userId: application.freelancerProfile.userId,
@@ -118,7 +118,7 @@ export async function hireFreelancer(req: Request, res: Response, next: NextFunc
         },
       });
 
-      // 7. Notify competing candidates
+      // 6. Notify competing candidates
       for (const comp of competing) {
         await tx.notification.create({
           data: {
@@ -133,6 +133,10 @@ export async function hireFreelancer(req: Request, res: Response, next: NextFunc
 
       return contract;
     });
+
+    if (!result) {
+      return res.status(409).json({ success: false, error: 'Another proposal was already selected for this project' });
+    }
 
     return res.status(201).json({ success: true, data: result });
   } catch (err) {

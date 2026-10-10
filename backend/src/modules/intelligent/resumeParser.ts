@@ -32,22 +32,40 @@ export async function parseResumeText(buffer: Buffer, mimeType: string): Promise
 
   // Attempt PDF extraction
   if (mimeType.includes('pdf')) {
-    try {
-      // Dynamic import to handle pdf-parse in ESM/NodeNext
-      const pdfParse = (await import('pdf-parse')).default;
-      const data = await pdfParse(buffer);
-      if (data && data.text) {
-        return data.text;
-      }
-    } catch (err) {
-      console.warn('[ResumeParser] pdf-parse fallback to raw buffer string scan:', err);
-    }
+    const pdfParse = (await import('pdf-parse')).default;
+    const data = await pdfParse(buffer);
+    if (data?.text?.trim()) return data.text;
+    throw new Error('The PDF did not contain extractable text.');
   }
 
-  // Fallback: extract ASCII words from document buffer
-  const rawString = buffer.toString('latin1');
-  const cleanAscii = rawString.replace(/[^\x20-\x7E\n\r\t]/g, ' ');
-  return cleanAscii;
+  if (mimeType.includes('wordprocessingml.document')) {
+    const JSZip = (await import('jszip')).default;
+    const archive = await JSZip.loadAsync(buffer);
+    const document = archive.file('word/document.xml');
+    const uncompressedSize = (document as unknown as { _data?: { uncompressedSize?: number } } | null)?._data?.uncompressedSize;
+    if (!document || (uncompressedSize !== undefined && uncompressedSize > 20 * 1024 * 1024)) {
+      throw new Error('The DOCX document is missing its text body or exceeds the extraction limit.');
+    }
+
+    const xml = await document.async('string');
+    const text = xml
+      .replace(/<w:tab\b[^>]*\/?\s*>/g, '\t')
+      .replace(/<w:(?:br|cr)\b[^>]*\/?\s*>/g, '\n')
+      .replace(/<\/w:p\s*>/g, '\n')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&(#x[\da-f]+|#\d+|amp|lt|gt|quot|apos);/gi, (entity, code: string) => {
+        if (code.startsWith('#')) {
+          const point = parseInt(code.slice(code.startsWith('#x') ? 2 : 1), code.startsWith('#x') ? 16 : 10);
+          return point <= 0x10ffff ? String.fromCodePoint(point) : entity;
+        }
+        return ({ amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" } as Record<string, string>)[code.toLowerCase()];
+      })
+      .trim();
+    if (text) return text;
+    throw new Error('The DOCX document did not contain extractable text.');
+  }
+
+  throw new Error('Unsupported resume format. Upload a PDF, DOCX, or plain text file.');
 }
 
 export function extractSkillsFromText(text: string): ResumeParsingResult {

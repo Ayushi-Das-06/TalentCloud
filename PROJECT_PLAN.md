@@ -1,83 +1,63 @@
-# PROJECT PLAN: Cloud-Based Intelligent Freelancing and Project Marketplace
+# TalentCloud Implementation Audit
 
-## Overview
-A university-grade, cloud-architected intelligent freelancing and project marketplace demonstrating explainable AI-driven matching, resume skill extraction, skill-gap analysis, smart budget/deadline estimation, and asynchronous queue processing with independent worker scaling.
+Last audited: 2026-10-10. “Implemented” means present in the repository; “verified” means exercised by the local build or tests noted in `TESTING.md`. AWS service calls and Docker execution remain unverified.
 
----
+## Foundation
 
-## Progress Checklist
+- [x] Local workspace access, runtime, repository docs, Git branch, and private GitHub read access verified.
+- [x] Frontend and backend TypeScript projects and lockfiles exist.
+- [x] SQLite local schema, PostgreSQL schema, seed script, and development Compose stack exist.
+- [x] Dockerfiles and API, worker, and frontend Compose services added; Docker is unavailable here, so image/compose validation is pending.
 
-### Phase 1: Workspace, Infrastructure & Foundation
-- [x] Workspace inspection and runtime verification (Node v24.14, npm 11.11, Git 2.53, local Postgres detected)
-- [x] Initial project governance files (`PROJECT_PLAN.md`, `DEVELOPMENT_LOG.md`, `README.md`, `.env.example`, `DECISIONS.md`)
-- [ ] Initialize Backend (`backend/package.json`, TypeScript, Express, Prisma, BullMQ)
-- [ ] Initialize Frontend (`frontend/package.json`, Vite, React, TypeScript, Tailwind CSS, TanStack Query, Recharts)
-- [ ] Local environment configuration & Docker Compose setup
+## Database and identity
 
-### Phase 2: Database Schema & Authentication
-- [ ] Prisma schema with PostgreSQL models (Users, FreelancerProfile, ClientProfile, Skills, Resumes, ResumeAnalysis, Projects, Applications, Hires, Tasks, Reviews, Notifications, Jobs)
-- [ ] Seed script with realistic demo clients, freelancers, projects, reviews, tasks, and resumes
-- [ ] Backend Authentication service (Argon2/bcrypt hashing, JWT/secure session, role-based access control: Client, Freelancer, Admin)
-- [ ] Auth endpoints (`/api/v1/auth/register`, `/login`, `/me`, `/logout`)
-- [ ] Frontend Auth state, login/registration forms, protected routes
+- [x] Prisma models cover users, profiles, skills, resumes, projects, applications, contracts, tasks, reviews, notifications, files, and background jobs.
+- [x] Seed script provides client, freelancer, admin, projects, applications, skills, and demonstration records. It clears the configured database before reseeding.
+- [x] Registration, login, current-user, and logout endpoints; client/freelancer/admin authorization; protected admin endpoints.
+- [x] React login/register state and protected routes.
+- [ ] Full API integration coverage for registration, suspension, ownership, and role escalation.
 
-### Phase 3: Core Marketplace Features
-- [ ] Freelancer Profile management (skills, experience, hourly rate, portfolio, availability)
-- [ ] Client Profile management (organization, industry, website, project history)
-- [ ] Project Management (create, edit, draft/open/in-progress/completed/cancelled lifecycle)
-- [ ] Project Discovery & Search (keyword search, category filter, skill filter, budget/experience filter, pagination)
-- [ ] Applications Workflow (submit proposal, cover letter, proposed budget, accept/reject/withdraw)
-- [ ] Hiring Engine (atomic transactional hire, status transitions, auto-rejection of competing proposals)
-- [ ] Task Tracking (Kanban/list board, To Do -> In Progress -> In Review -> Completed, assignment)
-- [ ] Reviews & Ratings (1-5 star ratings, sentiment, bidirectional reviews, average rating calculation)
-- [ ] In-App Notification Center (real-time/polled alerts for invites, applications, hires, task updates)
+## Marketplace workflows
 
-### Phase 4: Object Storage & File Management
-- [ ] S3-compatible file storage adapter (local disk / MinIO / AWS S3)
-- [ ] Secure upload endpoints with file validation (MIME, size limits) and sanitized keys
-- [ ] Secure streaming / presigned URL downloads with ownership verification
-- [ ] Attachments for projects, task deliverables, and candidate resumes
+- [x] Freelancer and client profile APIs, skill management, project creation/editing/discovery, proposals, hiring, contract completion, tasks, reviews, and notifications are implemented.
+- [x] Hiring uses a database transaction to accept one application, reject competitors, create a contract, initialize a task, and notify participants.
+- [x] Task reads and writes check project membership; status changes validate allowed states; task deletion is client-owner/admin only.
+- [x] Review submission is limited to completed-contract participants and validates ratings and feedback.
+- [ ] End-to-end lifecycle tests against a disposable PostgreSQL database.
+- [ ] Bidirectional client/freelancer reviews and richer notification delivery.
 
-### Phase 5: Intelligent Features (Explainable AI Engines)
-- [ ] **Intelligent Feature 1: Freelancer-Project Matching Engine**
-  - Weighted algorithm (Skill: 40%, Experience: 20%, Past Performance: 15%, Rating: 10%, Availability: 10%, Budget: 5%)
-  - Skill normalization & alias dictionary (e.g. JS -> JavaScript, Postgres -> PostgreSQL)
-  - Detailed score breakdown, match explanation badge (Excellent, Good, Partial)
-- [ ] **Intelligent Feature 2: Asynchronous Resume & Skill Analyzer**
-  - Text extraction pipeline (PDF/DOCX/text parser)
-  - Background queue processing via worker
-  - Confidence scoring and user verification/editing UI
-- [ ] **Intelligent Feature 3: Skill-Gap Analysis**
-  - Freelancer vs target project or market category
-  - Matched skills, missing skills, related bridge skills, learning recommendations
-- [ ] **Intelligent Feature 4: Smart Budget & Deadline Estimator**
-  - Heuristic estimation based on category, complexity, required skills, and task volume
-  - Confidence intervals, explanation breakdown, and client override capability
+## Files and intelligent features
 
-### Phase 6: Cloud Architecture & Asynchronous Workers
-- [ ] Queue abstraction supporting BullMQ / Redis locally and Amazon SQS in AWS
-- [ ] Standalone worker process (`worker.ts`) capable of horizontal multi-instance scaling
-- [ ] Job status tracking, retry with exponential backoff, dead-letter job handling
-- [ ] Admin/Dev Queue Demonstration Dashboard (active, waiting, completed, failed metrics)
-- [ ] Load testing script for simulated burst processing
+- [x] Local/S3 storage adapters support private file retrieval with ownership checks and path containment.
+- [x] Resume upload is authenticated, limited to 10 MB, and restricted to PDF, DOCX, TXT, and Markdown.
+- [x] Resume analysis extracts text from PDF, DOCX, and text files and queues skill analysis.
+- [x] Project/task attachment upload and task-level file links; deletion API remains outstanding.
+- [ ] Presigned S3 downloads; current API streams objects through authenticated routes.
+- [x] Explainable weighted freelancer/project matching, canonical skill aliases, skill-gap analysis, and budget/deadline estimation.
+- [x] Client matching is restricted to the project owner or admin; freelancer recommendations are private to the signed-in freelancer.
+- [x] DOCX extraction has a parser regression fixture.
+- [ ] Resume analysis confirmation/editing workflow.
 
-### Phase 7: Frontend Polish & Experience
-- [ ] Responsive UI with Tailwind CSS and modern SaaS design principles
-- [ ] Landing page, discovery portals, interactive dashboards (Client, Freelancer, Admin)
-- [ ] Interactive task Kanban board, application review drawer, and file viewer
-- [ ] Recharts analytics for client spend, freelancer earnings, matching trends
+## Background work and operations
 
-### Phase 8: Testing & Quality Assurance
-- [ ] Unit tests for matching engine, skill normalization, estimator, and auth helpers
-- [ ] Integration tests for API endpoints (auth, project lifecycle, hiring transaction)
-- [ ] Automated end-to-end user scenario validation
+- [x] In-memory async queue for local development, BullMQ/Redis, and Amazon SQS enqueue/worker support.
+- [x] BullMQ and SQS workers run separately; retries and failed-job inspection/retry are supported.
+- [x] SQS retries and failed-job persistence in the database for admin retry; queue, IAM, and external DLQ policies remain deployment configuration.
+- [x] Admin queue and system dashboards; all admin endpoints require the ADMIN role.
+- [ ] Load/burst integration test and queue recovery test against Redis.
 
-### Phase 9: AWS Deployment Preparation & Production Engineering
-- [ ] Dockerfiles for API, Worker, and Frontend
-- [ ] Production AWS Architecture blueprint (ECS Fargate, RDS PostgreSQL, S3, SQS, ElastiCache, CloudWatch)
-- [ ] Terraform / CloudFormation templates & AWS Deployment Guide
+## Frontend and quality
 
-### Phase 10: Final Verification & Viva Demonstration Guide
-- [ ] End-to-end verification of all workflows
-- [ ] `DEMO_GUIDE.md` for live classroom presentation
-- [ ] Final status report & architectural defense
+- [x] Landing, discovery, project details, client/freelancer dashboards, proposal review, workspace with task attachments, skill-gap, estimator, and admin queue screens exist.
+- [x] Frontend production build passes. Vite reports a main JavaScript chunk around 700 kB; route-level code splitting is still needed.
+- [x] Backend TypeScript build passes; 15 unit and API access-control tests pass.
+- [ ] Browser-driven end-to-end coverage and accessibility review.
+- [ ] Dependency audit is clean. The current report retains high-severity Prisma config dependency advisories; see `TESTING.md`.
+
+## Cloud deployment
+
+- [x] PostgreSQL Prisma schema and local Docker Compose topology prepared for API, worker, frontend, PostgreSQL, and Redis.
+- [ ] Docker image build and compose smoke test (Docker is not installed in the audited environment).
+- [x] S3 and SQS SDK adapters and environment configuration prepared.
+- [ ] ECS/Fargate, RDS, ElastiCache, CloudWatch, IAM policies, secrets management, and deployment templates.
+- [ ] Live AWS validation. No AWS account or credentials were available, and no resources were provisioned.

@@ -42,7 +42,10 @@ export function ProjectDetailsPage() {
   const { data: matchData } = useQuery({
     queryKey: ['projectMatches', id],
     queryFn: () => apiFetch<{ matches: MatchCandidate[] }>(`/intelligent/match/project/${id}`),
-    enabled: !!id,
+    enabled:
+      !!id &&
+      user?.role === 'CLIENT' &&
+      user.profile?.id === projectData?.data?.clientId,
   });
 
   // Submit Application Mutation
