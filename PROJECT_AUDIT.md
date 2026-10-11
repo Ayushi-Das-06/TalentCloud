@@ -26,6 +26,7 @@ Last reviewed: 2026-10-12. Completion estimates are approximate, based on the re
 - Project attachment delete action works through the authorized API and storage abstraction.
 - Freelancer discovery profile links now resolve to a public read-only profile detail page; profile edits use protected APIs.
 - Backend build and 41 backend tests pass; a clean, disposable SQLite registration-to-review E2E smoke passes, including readiness, draft publication/deletion, paginated proposals, concurrent hire/withdrawal/cancellation state consistency, private attachment access, worker processing, notification privacy, and reciprocal/duplicate review checks. Frontend type check and production build pass. Both Prisma schemas validate.
+- Backend and frontend npm audits report zero vulnerabilities. Backend applies a scoped `@prisma/config` override to `deepmerge-ts@8.0.2`; Prisma remains at 6.19.3 and schema validation, build, tests, and E2E pass. Re-evaluate the override when Prisma updates its dependency pin.
 - Current verification: backend build and 41 tests pass; fresh SQLite push/seed succeeds with an existing generated client, and both schemas validate. Prisma Client regeneration fails with `EPERM` while a Node/tsx process holds the Windows query-engine DLL; the PostgreSQL schema check uses a placeholder URL, with no PostgreSQL service tested.
 - The seeded `backend/prisma/dev.db` contains demo marketplace rows and password hashes. It is now excluded from the branch tip and ignored for future changes; the local working file is preserved. Existing Git history was not rewritten.
 - Changes are committed on `codex/talentcloud-audit` and pushed without modifying `main`.
@@ -43,7 +44,7 @@ Last reviewed: 2026-10-12. Completion estimates are approximate, based on the re
 - Broader API edge-case integration, browser-driven E2E, and PostgreSQL lifecycle coverage.
 - Accessibility review and pagination for other authenticated record-list endpoints. Project proposals now have validated, capped pagination.
 - File malware scanning/retention policy, infrastructure as code, observability dashboards, and recovery rehearsal.
-- Compatible fix for remaining Prisma dependency advisories.
+- Prisma Client regeneration in this Windows workspace remains blocked while a running TalentCloud process holds the query-engine DLL.
 
 ## Blocked by user action
 

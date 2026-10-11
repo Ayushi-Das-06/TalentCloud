@@ -11,7 +11,7 @@
 
 ## AWS integration readiness gate
 
-The AWS phase should begin after (1) the Prisma dependency advisory is resolved and audited, (2) Prisma Client generation succeeds from a clean local process, and (3) Docker Compose passes the PostgreSQL, Redis-backed rate-limit/queue, and MinIO upload/download/delete smoke checks. That verifies the app against production-shaped local dependencies before cloud infrastructure adds another source of failure. Those prerequisites remain open: the backend audit reports three high advisories, a running TalentCloud Node process holds the Prisma engine DLL, and Docker is unavailable in this workspace. The current backend/frontend builds and SQLite E2E do pass.
+The AWS phase should begin after (1) Prisma Client generation succeeds from a clean local process and (2) Docker Compose passes the PostgreSQL, Redis-backed rate-limit/queue, and MinIO upload/download/delete smoke checks. That verifies the app against production-shaped local dependencies before cloud infrastructure adds another source of failure. Those prerequisites remain open: a running TalentCloud Node process holds the Prisma engine DLL, and Docker is unavailable in this workspace. Both backend and frontend dependency audits are now clean; backend/frontend builds and SQLite E2E pass.
 
 Once the gate passes, the first step is a no-provisioning infrastructure review: choose a target AWS region, estimate recurring costs, and review the proposed service boundaries and access policies. Then prepare the AWS account security and billing safeguards below. Provisioning remains a separate explicit step after cost and architecture review. No AWS account, credentials, or resources were available or used during this audit.
 

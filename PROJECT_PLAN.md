@@ -66,7 +66,7 @@ Last audited: 2026-10-12. “Implemented” means present in the repository; “
 ## Dependency security
 
 - [x] VERIFIED COMPLETE — Frontend dependencies updated to React Router 7.18.4, Vite 8.3.4, and Tailwind CSS 4.3.3 with the Vite integration. TypeScript/production build passes and `npm audit` reports zero frontend advisories. Commit: `046b2c5`.
-- [ ] BLOCKED — Backend `npm audit --omit=dev` reports three high-severity entries through Prisma 6.19.3 → `@prisma/config` → `deepmerge-ts`. `npm audit fix --dry-run` makes no dependency changes. No override was applied; resolve through a compatible, tested Prisma dependency update before deployment.
+- [x] VERIFIED COMPLETE — Scoped the Prisma config dependency to patched `deepmerge-ts@8.0.2` without changing Prisma 6.19.3. Backend `npm audit --omit=dev` reports zero vulnerabilities; `npm ls`, SQLite/PostgreSQL schema validation, backend build, all 41 tests, and SQLite E2E pass with the override. Recheck when Prisma updates its pinned config dependency.
 
 ## Frontend and quality
 
@@ -74,7 +74,7 @@ Last audited: 2026-10-12. “Implemented” means present in the repository; “
 - [x] Frontend production build passes with route-level code splitting. The initial JavaScript chunk is about 233 kB; the Recharts chunk is about 372 kB.
 - [x] Backend TypeScript build passes; current test count is recorded in `TESTING.md`.
 - [ ] Browser-driven end-to-end coverage and accessibility review.
-- [ ] BLOCKED — Frontend dependency audit is clean; the backend audit retains three high-severity Prisma config dependency advisories. See `Dependency security` and `TESTING.md`.
+- [x] VERIFIED COMPLETE — Frontend and backend dependency audits report zero vulnerabilities after the tested scoped Prisma config override. Runtime/container and infrastructure checks remain open separately.
 
 ## Cloud deployment
 
