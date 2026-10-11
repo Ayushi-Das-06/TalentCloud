@@ -180,7 +180,35 @@ try {
   });
   pass(review.response.status === 201, 'completed-contract participant submits review');
 
-  console.log('E2E smoke passed: registration, project creation, proposals, concurrent single hire, private files, resume worker/skill confirmation, contract completion, and review.');
+  const raceProjectResult = await request(baseUrl, '/projects', {
+    method: 'POST', token: client.token,
+    json: {
+      title: 'E2E cancellation and hiring race',
+      description: 'Verify cancellation and hiring cannot produce conflicting project states.',
+      category: 'Cloud / DevOps', minBudget: 250, maxBudget: 500,
+      estimatedDurationDays: 30, skills: ['TypeScript'],
+    },
+  });
+  pass(raceProjectResult.response.status === 201, 'create cancellation race project');
+  const raceProjectId = raceProjectResult.data.data.id;
+  const raceApplication = await request(baseUrl, '/applications', {
+    method: 'POST', token: freelancerOne.token,
+    json: { projectId: raceProjectId, coverLetter: 'I can deliver this safely.', proposedBudget: 300, estimatedDays: 20 },
+  });
+  pass(raceApplication.response.status === 201, 'apply to cancellation race project');
+  const [cancellation, raceHire] = await Promise.all([
+    request(baseUrl, `/projects/${raceProjectId}`, { method: 'PUT', token: client.token, json: { status: 'CANCELLED' } }),
+    request(baseUrl, '/hiring/hire', { method: 'POST', token: client.token, json: { applicationId: raceApplication.data.data.id } }),
+  ]);
+  const raceState = await request(baseUrl, `/projects/${raceProjectId}`, { token: client.token });
+  const raceContracts = raceState.data.data?.contracts || [];
+  pass(
+    (raceState.data.data?.status === 'CANCELLED' && cancellation.response.status === 200 && raceContracts.length === 0) ||
+    (raceState.data.data?.status === 'IN_PROGRESS' && cancellation.response.status !== 200 && raceContracts.some((item) => item.status === 'ACTIVE') && raceHire.response.status === 201),
+    'concurrent cancellation and hiring preserve a consistent project/contract state',
+  );
+
+  console.log('E2E smoke passed: registration, project creation, proposals, concurrent hiring/cancellation state, private files, resume worker/skill confirmation, contract completion, and review.');
 } finally {
   if (apiProcess && apiProcess.exitCode === null) {
     apiProcess.kill(process.platform === 'win32' ? undefined : 'SIGTERM');

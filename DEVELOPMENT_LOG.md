@@ -33,6 +33,7 @@
 - Added an optional shared Redis rate-limit store with bounded fixed-window counters, TLS URL validation, Compose wiring, and clean shutdown.
 - Verified backend build, 37 backend tests, full SQLite E2E smoke, and frontend production build.
 - Rechecked local tooling and dependency advisories. Docker, Terraform, and AWS CLI are unavailable; three high-severity advisories remain in Prisma's config dependency chain and need a compatible Prisma upgrade.
+- Fixed a cancellation-versus-hiring race by making client cancellation an atomic update conditioned on project ownership and `OPEN` status. Added an E2E race assertion confirming cancellation and hiring leave consistent project/contract states. Backend build, 37 unit tests, the clean SQLite E2E smoke, frontend production build, and SQLite/PostgreSQL Prisma schema validation passed after the fix. The PostgreSQL schema check used a placeholder URL and did not connect to a server.
 
 ## Open work
 

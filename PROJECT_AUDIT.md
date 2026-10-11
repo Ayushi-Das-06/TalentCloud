@@ -9,6 +9,7 @@ Last reviewed: 2026-10-11. Completion estimates are approximate, based on the re
 - Authorization covers admin operations, project visibility/matching, task access, contract participants, file downloads/deletion, and completed-project review writes.
 - Public discovery exposes open projects only. Public profile responses omit email and hide suspended profiles.
 - Client project proposal listings are paginated with a validated page size capped at 50; the client proposal screen exposes next/previous page controls.
+- Project cancellation atomically claims only an `OPEN` project owned by the requesting client, preventing a concurrent hire from leaving an active contract on a cancelled project.
 - Request validation covers authentication, project create/update and discovery, application/hire/review/task/profile writes, supported route UUIDs, and upload metadata/content signatures.
 - Limits cover login/registration, file uploads, and computational matching endpoints. They can use process-local memory or shared Redis fixed-window counters.
 - Optional shared Redis fixed-window counters distribute those limits across API replicas; local development can continue using the in-memory default.
@@ -19,7 +20,7 @@ Last reviewed: 2026-10-11. Completion estimates are approximate, based on the re
 - Frontend role-based login redirect, profile editing, notification read/unread controls, resume status/skill confirmation, application/hiring, workspace tasks/files, matching, skill gap, and estimator flows are connected to existing APIs.
 - Project attachment delete action works through the authorized API and storage abstraction.
 - Freelancer discovery profile links now resolve to a public read-only profile detail page; profile edits use protected APIs.
-- Backend build and 37 backend tests pass; a clean, disposable SQLite registration-to-review E2E smoke passes, including database readiness and paginated proposal-list verification. Frontend type check and production build pass. Both Prisma schemas validate and generate clients.
+- Backend build and 37 backend tests pass; a clean, disposable SQLite registration-to-review E2E smoke passes, including database readiness, paginated proposals, concurrent single-winner hiring, cancellation-versus-hiring state consistency, private attachment access, worker processing, and review. Frontend type check and production build pass. Both Prisma schemas validate.
 - The seeded `backend/prisma/dev.db` contains demo marketplace rows and password hashes. It is now excluded from the branch tip and ignored for future changes; the local working file is preserved. Existing Git history was not rewritten.
 - Changes are committed on `codex/talentcloud-audit` and pushed without modifying `main`.
 

@@ -258,17 +258,32 @@ export async function updateProject(req: Request, res: Response, next: NextFunct
       return res.status(400).json({ success: false, error: 'Only open projects can be cancelled here; hiring and completion manage other state changes' });
     }
 
-    const updated = await prisma.project.update({
+    const data = {
+      title,
+      description,
+      category,
+      minBudget: minBudget === undefined ? undefined : Number(minBudget),
+      maxBudget: maxBudget === undefined ? undefined : Number(maxBudget),
+      status: status as any,
+      deadline: deadline ? new Date(deadline) : undefined,
+    };
+
+    if (status === 'CANCELLED') {
+      // Claim cancellation atomically so a concurrent hire cannot leave an
+      // active contract attached to a project that was subsequently cancelled.
+      const claim = await prisma.project.updateMany({
+        where: { id, clientId: project.clientId, status: 'OPEN' },
+        data,
+      });
+      if (claim.count !== 1) {
+        return res.status(409).json({ success: false, error: 'Project state changed; refresh before trying again' });
+      }
+    } else {
+      await prisma.project.update({ where: { id }, data });
+    }
+
+    const updated = await prisma.project.findUnique({
       where: { id },
-      data: {
-        title,
-        description,
-        category,
-        minBudget: minBudget === undefined ? undefined : Number(minBudget),
-        maxBudget: maxBudget === undefined ? undefined : Number(maxBudget),
-        status: status as any,
-        deadline: deadline ? new Date(deadline) : undefined,
-      },
       include: { skills: { include: { skill: true } } },
     });
 
