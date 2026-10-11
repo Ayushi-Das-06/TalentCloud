@@ -50,3 +50,4 @@
 - Application transition security: submission serializes against project state changes, hiring conditionally claims the pending application inside its contract transaction, and withdrawal uses an owner-and-status conditional update. SQLite E2E raced withdrawal with hiring and confirmed consistent terminal state; it also verified cross-user withdrawal denial. Backend build and all 39 backend tests passed.
 - Checkpoint: `49c57b4` (`fix(applications): make hiring and withdrawal atomic`).
 - Notification privacy regression: list and mark-read operations remain recipient-scoped; cross-user mark-read now returns 404 instead of false success. E2E verified an application notification is visible to its client only and remains unread after another user attempts access. Backend build, all 39 tests, and full SQLite E2E passed.
+- Checkpoint: `4b36fe2` (`fix(notifications): enforce recipient ownership`).
