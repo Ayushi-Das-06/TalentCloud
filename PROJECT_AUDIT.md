@@ -8,15 +8,17 @@ Last reviewed: 2026-10-10. Completion estimates are approximate, based on the re
 - Authentication reloads account state on protected requests, rejects suspended users and invalid roles, and production rejects missing, short, or known development JWT/cookie secrets.
 - Authorization covers admin operations, project visibility/matching, task access, contract participants, file downloads/deletion, and completed-project review writes.
 - Public discovery exposes open projects only. Public profile responses omit email and hide suspended profiles.
+- Client project proposal listings are paginated with a validated page size capped at 50; the client proposal screen exposes next/previous page controls.
 - Request validation covers authentication, project create/update and discovery, application/hire/review/task/profile writes, supported route UUIDs, and upload metadata/content signatures.
 - Per-process limits cover login/registration, file uploads, and computational matching endpoints.
 - Private local/S3 storage supports upload, retrieval, deletion, random keys, path containment, and membership/ownership checks. Local storage behavior and deletion are tested.
 - Resume parsing supports PDF, DOCX, TXT, and Markdown; suggestions are unverified until the freelancer confirms them in the dashboard.
 - Memory queue success, bounded retry, exhausted failure, and file-reference payload behavior are unit tested. BullMQ/SQS adapters and a standalone worker are implemented.
+- Separate liveness and database readiness probes are available; the API container health check uses readiness so it does not report healthy while PostgreSQL is unavailable.
 - Frontend role-based login redirect, profile editing, notification read/unread controls, resume status/skill confirmation, application/hiring, workspace tasks/files, matching, skill gap, and estimator flows are connected to existing APIs.
 - Project attachment delete action works through the authorized API and storage abstraction.
 - Freelancer discovery profile links now resolve to a public read-only profile detail page; profile edits use protected APIs.
-- Backend build and 30 backend tests pass; a clean, disposable SQLite registration-to-review E2E smoke passes. Frontend type check and production build pass. Both Prisma schemas validate and generate clients.
+- Backend build and 33 backend tests pass; a clean, disposable SQLite registration-to-review E2E smoke passes, including database readiness and paginated proposal-list verification. Frontend type check and production build pass. Both Prisma schemas validate and generate clients.
 - The seeded `backend/prisma/dev.db` contains demo marketplace rows and password hashes. It is now excluded from the branch tip and ignored for future changes; the local working file is preserved. Existing Git history was not rewritten.
 - Changes are committed on `codex/talentcloud-audit` and pushed without modifying `main`.
 
@@ -31,7 +33,7 @@ Last reviewed: 2026-10-10. Completion estimates are approximate, based on the re
 ## In progress
 
 - Broader API edge-case integration, browser-driven E2E, and PostgreSQL lifecycle coverage.
-- Accessibility review and API pagination consistency outside public discovery.
+- Accessibility review and pagination for other authenticated record-list endpoints. Project proposals now have validated, capped pagination.
 - Production-grade distributed rate limiting, file malware scanning/retention policy, infrastructure as code, observability dashboards, and recovery rehearsal.
 - Compatible fix for remaining Prisma dependency advisories.
 
@@ -47,7 +49,7 @@ Fresh SQLite initialization now works through `npm run prisma:push`, which creat
 - ECS/Fargate, RDS, IAM, Secrets Manager, CloudWatch, alarms, backup/restore automation, and Terraform/CloudFormation templates.
 - S3 presigned URLs (downloads currently stream through the authenticated API).
 - Configured SQS dead-letter queue policy. Exhausted jobs are marked failed in the database for admin inspection/retry; production queue redrive settings must still be configured.
-- Live Redis/BullMQ restart recovery, AWS SQS redrive, object-store integration, browser E2E, and clean-database end-to-end hire flow.
+- Live Redis/BullMQ restart recovery, AWS SQS redrive, live object-store integration, and browser-driven E2E.
 
 ## Current estimate
 

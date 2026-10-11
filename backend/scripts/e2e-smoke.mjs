@@ -35,7 +35,7 @@ async function waitForHealth(baseUrl, child) {
   while (Date.now() < deadline) {
     if (child.exitCode !== null) throw new Error(`API exited before becoming healthy (code ${child.exitCode}).`);
     try {
-      const response = await fetch(`${baseUrl}/health`);
+      const response = await fetch(`${baseUrl}/ready`);
       if (response.ok) return;
     } catch { /* API is still starting. */ }
     await new Promise((resolve) => setTimeout(resolve, 250));
@@ -117,6 +117,9 @@ try {
     pass(response.status === 201, 'submit application');
     applications.push({ applicationId: data.data.id, freelancer });
   }
+
+  const proposalPage = await request(baseUrl, `/applications/project/${projectId}?page=1&limit=1`, { token: client.token });
+  pass(proposalPage.response.status === 200 && proposalPage.data.data.length === 1 && proposalPage.data.pagination.total === 2, 'client proposal list paginates with total count');
 
   const simultaneousHires = await Promise.all(applications.map(({ applicationId }) =>
     request(baseUrl, '/hiring/hire', { method: 'POST', token: client.token, json: { applicationId } }),

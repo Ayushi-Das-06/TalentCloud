@@ -20,6 +20,7 @@ export function ProjectApplicationsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [hiringError, setHiringError] = useState('');
+  const [page, setPage] = useState(1);
 
   // Fetch Project Details
   const { data: projectData } = useQuery({
@@ -29,8 +30,11 @@ export function ProjectApplicationsPage() {
 
   // Fetch Applications
   const { data: appData, isLoading } = useQuery({
-    queryKey: ['projectApplications', projectId],
-    queryFn: () => apiFetch<{ data: Application[] }>(`/applications/project/${projectId}`),
+    queryKey: ['projectApplications', projectId, page],
+    queryFn: () => apiFetch<{
+      data: Application[];
+      pagination?: { page: number; limit: number; total: number; totalPages: number };
+    }>(`/applications/project/${projectId}?page=${page}&limit=20`),
     enabled: !!projectId,
   });
 
@@ -66,7 +70,7 @@ export function ProjectApplicationsPage() {
             Proposals for: {project?.title}
           </h1>
           <p className="text-slate-500 text-xs mt-1">
-            Status: <span className="font-semibold text-slate-800">{project?.status}</span> • Received {applications.length} proposals
+            Status: <span className="font-semibold text-slate-800">{project?.status}</span> • Received {appData?.pagination?.total ?? applications.length} proposals
           </p>
         </div>
       </div>
@@ -167,6 +171,25 @@ export function ProjectApplicationsPage() {
             Freelancers will submit proposals as they discover your project.
           </p>
         </div>
+      )}
+      {(appData?.pagination?.totalPages ?? 1) > 1 && (
+        <nav aria-label="Proposal pages" className="flex items-center justify-center gap-4">
+          <button
+            type="button"
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            disabled={page <= 1 || isLoading}
+            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium disabled:opacity-40"
+          >Previous</button>
+          <span className="text-sm text-slate-600" aria-live="polite">
+            Page {appData?.pagination?.page ?? page} of {appData?.pagination?.totalPages}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage((current) => current + 1)}
+            disabled={isLoading || page >= (appData?.pagination?.totalPages ?? 1)}
+            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium disabled:opacity-40"
+          >Next</button>
+        </nav>
       )}
     </div>
   );

@@ -9,6 +9,8 @@ import { authenticateToken, requireRole } from '../../middleware/auth.js';
 import { validateBody } from '../../middleware/validate.js';
 import { validateParams } from '../../middleware/validate.js';
 import { z } from 'zod';
+import { paginationQuerySchema } from '../../middleware/pagination.js';
+import { validateQuery } from '../../middleware/validate.js';
 
 const router = Router();
 
@@ -25,6 +27,6 @@ router.get('/my-applications', authenticateToken, requireRole(['FREELANCER']), g
 router.post('/:id/withdraw', authenticateToken, requireRole(['FREELANCER']), validateParams(z.object({ id: z.string().uuid() })), withdrawApplication);
 
 // Client routes
-router.get('/project/:projectId', authenticateToken, requireRole(['CLIENT']), validateParams(z.object({ projectId: z.string().uuid() })), getProjectApplications);
+router.get('/project/:projectId', authenticateToken, requireRole(['CLIENT']), validateParams(z.object({ projectId: z.string().uuid() })), validateQuery(paginationQuerySchema), getProjectApplications);
 
 export default router;

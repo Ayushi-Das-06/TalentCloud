@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../../db/prisma.js';
+import { getPagination } from '../../middleware/pagination.js';
 
 export async function submitApplication(req: Request, res: Response, next: NextFunction) {
   try {
@@ -121,20 +122,31 @@ export async function getProjectApplications(req: Request, res: Response, next: 
       return res.status(403).json({ success: false, error: 'You are not authorized to view applications for this project' });
     }
 
-    const applications = await prisma.application.findMany({
-      where: { projectId },
-      include: {
-        freelancerProfile: {
-          include: {
-            user: { select: { id: true, name: true, email: true, avatarUrl: true } },
-            skills: { include: { skill: true } },
+    const { page, limit, skip } = getPagination(req.query);
+    const where = { projectId };
+    const [applications, total] = await Promise.all([
+      prisma.application.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          freelancerProfile: {
+            include: {
+              user: { select: { id: true, name: true, email: true, avatarUrl: true } },
+              skills: { include: { skill: true } },
+            },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.application.count({ where }),
+    ]);
 
-    return res.json({ success: true, data: applications });
+    return res.json({
+      success: true,
+      data: applications,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    });
   } catch (err) {
     next(err);
   }

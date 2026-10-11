@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { config } from './config/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { checkDatabaseConnection } from './db/prisma.js';
 
 // Route imports
 import authRoutes from './modules/auth/authRoutes.js';
@@ -42,6 +43,14 @@ app.get('/api/v1/health', (req, res) => {
     uptime: Math.round(process.uptime()),
     environment: config.env,
   });
+});
+
+app.get('/api/v1/ready', async (_req, res) => {
+  const databaseReady = await checkDatabaseConnection();
+  if (!databaseReady) {
+    return res.status(503).json({ status: 'NOT_READY', checks: { database: 'unavailable' } });
+  }
+  return res.json({ status: 'READY', checks: { database: 'available' } });
 });
 
 // Mount modular domain routers
