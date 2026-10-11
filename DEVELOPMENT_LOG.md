@@ -44,3 +44,4 @@
 - Security artifact review: no tracked credential-pattern matches, private key files, or local SQLite database artifacts were found. `.env.example` is the only tracked env file; local `.env` and database files are ignored. Scope is the current checkout; full Git-history scanning was not performed.
 - Production auth configuration review: config tests passed (5 tests), including rejection of missing and development-default secrets. Auth cookies are configured HttpOnly, Secure in production, and SameSite=Lax. HTTPS proxy deployment behavior remains unverified.
 - Project privacy regression: public discovery and detail query projections are tested to omit client email; existing tests continue to verify unauthenticated draft/non-open visibility. Focused project visibility suite passed (6 tests).
+- Checkpoint: `57ed2ca` (`test(security): protect public project privacy`).
