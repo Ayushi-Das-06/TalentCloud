@@ -54,3 +54,4 @@
 - Review eligibility coverage: SQLite E2E confirmed both completed-contract participants can review each other, unrelated freelancers are rejected, and duplicate review submission returns 409.
 - Checkpoint: `4b8ee68` (`test(reviews): cover reciprocal and duplicate eligibility`).
 - Database setup verification: fresh disposable SQLite schema push and seed succeeded (6 users, 3 projects, 12 skills); both Prisma schemas validated. Independent `npm run prisma:generate` reproduces Windows `EPERM` replacing the query-engine DLL while a Node/tsx process holds it. PostgreSQL validation used a placeholder URL; no server was contacted.
+- Checkpoint: `5b53d3f` (`docs(database): record local setup verification`).
