@@ -5,6 +5,7 @@ import {
   createProject,
   updateProject,
   getClientProjects,
+  deleteDraftProject,
 } from './projectController.js';
 import { authenticateToken, optionalAuthenticateToken, requireRole } from '../../middleware/auth.js';
 import { validateBody, validateQuery } from '../../middleware/validate.js';
@@ -22,5 +23,6 @@ router.get('/:id', optionalAuthenticateToken, validateParams(z.object({ id: z.st
 // Client-only routes
 router.post('/', authenticateToken, requireRole(['CLIENT']), validateBody(createProjectSchema), createProject);
 router.put('/:id', authenticateToken, requireRole(['CLIENT']), validateParams(z.object({ id: z.string().uuid() })), validateBody(updateProjectSchema), updateProject);
+router.delete('/:id', authenticateToken, requireRole(['CLIENT']), validateParams(z.object({ id: z.string().uuid() })), deleteDraftProject);
 
 export default router;

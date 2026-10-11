@@ -48,7 +48,7 @@ export function CreateProjectPage() {
   };
 
   const createMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (status: 'DRAFT' | 'OPEN') => {
       const skillsArray = skills.split(',').map((s) => s.trim()).filter(Boolean);
       return apiFetch('/projects', {
         method: 'POST',
@@ -63,21 +63,23 @@ export function CreateProjectPage() {
           estimatedDurationDays: parseInt(estimatedDurationDays, 10),
           expectedDeliverables,
           skills: skillsArray,
+          status,
         }),
       });
     },
-    onSuccess: (data) => {
-      navigate(`/projects/${data.data.id}`);
+    onSuccess: (data, status) => {
+      navigate(status === 'DRAFT' ? '/client/dashboard' : `/projects/${data.data.id}`);
     },
     onError: (err: any) => {
       setError(err.message || 'Failed to create project');
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
-    createMutation.mutate();
+    const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+    createMutation.mutate(submitter?.value === 'DRAFT' ? 'DRAFT' : 'OPEN');
   };
 
   return (
@@ -253,10 +255,19 @@ export function CreateProjectPage() {
           </button>
           <button
             type="submit"
+            value="DRAFT"
+            disabled={createMutation.isPending}
+            className="flex items-center gap-2 px-6 py-2.5 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl text-sm font-semibold disabled:opacity-50"
+          >
+            {createMutation.isPending && createMutation.variables === 'DRAFT' ? 'Saving...' : 'Save Draft'}
+          </button>
+          <button
+            type="submit"
+            value="OPEN"
             disabled={createMutation.isPending}
             className="flex items-center gap-2 px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-brand-500/20 disabled:opacity-50"
           >
-            {createMutation.isPending ? 'Publishing...' : 'Publish Project'}
+            {createMutation.isPending && createMutation.variables === 'OPEN' ? 'Publishing...' : 'Publish Project'}
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

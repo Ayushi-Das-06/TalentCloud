@@ -181,6 +181,7 @@ export async function createProject(req: Request, res: Response, next: NextFunct
       complexity,
       expectedDeliverables,
       deadline,
+      status = 'OPEN',
       skills = [],
     } = req.body;
 
@@ -199,7 +200,7 @@ export async function createProject(req: Request, res: Response, next: NextFunct
           complexity: complexity || 'MEDIUM',
           expectedDeliverables,
           deadline: deadline ? new Date(deadline) : null,
-          status: 'OPEN',
+          status,
         },
       });
 
@@ -254,8 +255,14 @@ export async function updateProject(req: Request, res: Response, next: NextFunct
     if (effectiveMinBudget > effectiveMaxBudget) {
       return res.status(400).json({ success: false, error: 'Minimum budget cannot exceed maximum budget' });
     }
-    if (status !== undefined && (status !== 'CANCELLED' || project.status !== 'OPEN')) {
+    if (status === 'CANCELLED' && project.status !== 'OPEN') {
       return res.status(400).json({ success: false, error: 'Only open projects can be cancelled here; hiring and completion manage other state changes' });
+    }
+    if (status === 'OPEN' && project.status !== 'DRAFT') {
+      return res.status(400).json({ success: false, error: 'Only draft projects can be published' });
+    }
+    if (!status && !['DRAFT', 'OPEN'].includes(project.status)) {
+      return res.status(409).json({ success: false, error: 'This project can no longer be edited in its current state' });
     }
 
     const data = {
@@ -268,18 +275,14 @@ export async function updateProject(req: Request, res: Response, next: NextFunct
       deadline: deadline ? new Date(deadline) : undefined,
     };
 
-    if (status === 'CANCELLED') {
-      // Claim cancellation atomically so a concurrent hire cannot leave an
-      // active contract attached to a project that was subsequently cancelled.
-      const claim = await prisma.project.updateMany({
-        where: { id, clientId: project.clientId, status: 'OPEN' },
-        data,
-      });
-      if (claim.count !== 1) {
-        return res.status(409).json({ success: false, error: 'Project state changed; refresh before trying again' });
-      }
-    } else {
-      await prisma.project.update({ where: { id }, data });
+    // Every editable transition claims the exact state observed above. This
+    // prevents stale edits, publication, or cancellation racing with a hire.
+    const claim = await prisma.project.updateMany({
+      where: { id, clientId: project.clientId, status: project.status },
+      data,
+    });
+    if (claim.count !== 1) {
+      return res.status(409).json({ success: false, error: 'Project state changed; refresh before trying again' });
     }
 
     const updated = await prisma.project.findUnique({
@@ -287,7 +290,48 @@ export async function updateProject(req: Request, res: Response, next: NextFunct
       include: { skills: { include: { skill: true } } },
     });
 
+    if (!updated) return res.status(404).json({ success: false, error: 'Project not found' });
     return res.json({ success: true, data: updated });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteDraftProject(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (!req.user || req.user.role !== 'CLIENT') {
+      return res.status(403).json({ success: false, error: 'Client access required' });
+    }
+
+    const { id } = req.params;
+    const project = await prisma.project.findUnique({
+      where: { id },
+      select: { id: true, clientId: true, status: true, client: { select: { userId: true } } },
+    });
+    if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
+    if (project.client.userId !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'You do not own this project' });
+    }
+    if (project.status !== 'DRAFT') {
+      return res.status(409).json({ success: false, error: 'Only draft projects can be deleted' });
+    }
+
+    const result = await prisma.project.deleteMany({
+      where: {
+        id,
+        clientId: project.clientId,
+        status: 'DRAFT',
+        applications: { none: {} },
+        contracts: { none: {} },
+        tasks: { none: {} },
+        projectFiles: { none: {} },
+        attachments: { none: {} },
+      },
+    });
+    if (result.count !== 1) {
+      return res.status(409).json({ success: false, error: 'Draft changed or contains related work and cannot be deleted' });
+    }
+    return res.status(204).send();
   } catch (err) {
     next(err);
   }

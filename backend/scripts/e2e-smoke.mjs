@@ -96,6 +96,48 @@ try {
   const client = await register('E2E Client', 'CLIENT');
   const freelancerOne = await register('E2E Freelancer One', 'FREELANCER');
   const freelancerTwo = await register('E2E Freelancer Two', 'FREELANCER');
+  const draftResult = await request(baseUrl, '/projects', {
+    method: 'POST', token: client.token,
+    json: {
+      title: 'E2E publishable draft project',
+      description: 'This draft verifies private visibility and explicit publication before discovery.',
+      category: 'Cloud / DevOps', minBudget: 250, maxBudget: 500,
+      estimatedDurationDays: 30, skills: ['TypeScript'], status: 'DRAFT',
+    },
+  });
+  pass(draftResult.response.status === 201 && draftResult.data.data.status === 'DRAFT', 'client saves a project draft');
+  const draftId = draftResult.data.data.id;
+  const hiddenDraft = await request(baseUrl, `/projects/${draftId}`);
+  pass(hiddenDraft.response.status === 404, 'draft details remain hidden from unauthenticated users');
+  const nonOwnerPublish = await request(baseUrl, `/projects/${draftId}`, {
+    method: 'PUT', token: freelancerOne.token, json: { status: 'OPEN' },
+  });
+  pass(nonOwnerPublish.response.status === 403, 'non-client cannot publish a project draft');
+  const publishResult = await request(baseUrl, `/projects/${draftId}`, {
+    method: 'PUT', token: client.token, json: { status: 'OPEN' },
+  });
+  pass(publishResult.response.status === 200 && publishResult.data.data.status === 'OPEN', 'project owner publishes a draft');
+  const protectedOpenDelete = await request(baseUrl, `/projects/${draftId}`, { method: 'DELETE', token: client.token });
+  pass(protectedOpenDelete.response.status === 409, 'published project cannot be destructively deleted');
+
+  const deletableDraft = await request(baseUrl, '/projects', {
+    method: 'POST', token: client.token,
+    json: {
+      title: 'E2E deletable draft project',
+      description: 'An empty draft can be removed by its owner without affecting marketplace work.',
+      category: 'Cloud / DevOps', minBudget: 250, maxBudget: 500,
+      estimatedDurationDays: 30, skills: ['TypeScript'], status: 'DRAFT',
+    },
+  });
+  pass(deletableDraft.response.status === 201, 'create deletable draft');
+  const draftDeleteUrl = `/projects/${deletableDraft.data.data.id}`;
+  const nonOwnerDelete = await request(baseUrl, draftDeleteUrl, { method: 'DELETE', token: freelancerOne.token });
+  pass(nonOwnerDelete.response.status === 403, 'non-owner cannot delete a draft');
+  const ownerDelete = await request(baseUrl, draftDeleteUrl, { method: 'DELETE', token: client.token });
+  pass(ownerDelete.response.status === 204, 'owner deletes an empty draft');
+  const deletedDraftLookup = await request(baseUrl, draftDeleteUrl, { token: client.token });
+  pass(deletedDraftLookup.response.status === 404, 'deleted draft is no longer accessible');
+
   const projectResult = await request(baseUrl, '/projects', {
     method: 'POST', token: client.token,
     json: {
@@ -208,7 +250,7 @@ try {
     'concurrent cancellation and hiring preserve a consistent project/contract state',
   );
 
-  console.log('E2E smoke passed: registration, project creation, proposals, concurrent hiring/cancellation state, private files, resume worker/skill confirmation, contract completion, and review.');
+  console.log('E2E smoke passed: registration, draft publication/deletion, proposals, concurrent hiring/cancellation state, private files, resume worker/skill confirmation, contract completion, and review.');
 } finally {
   if (apiProcess && apiProcess.exitCode === null) {
     apiProcess.kill(process.platform === 'win32' ? undefined : 'SIGTERM');

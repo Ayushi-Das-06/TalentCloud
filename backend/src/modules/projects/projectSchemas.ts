@@ -30,6 +30,7 @@ export const createProjectSchema = z.object({
   estimatedDurationDays: z.coerce.number().int().min(1).max(3650).optional(),
   expectedDeliverables: z.string().trim().max(10_000).optional(),
   deadline: deadlineSchema,
+  status: z.enum(['DRAFT', 'OPEN']).default('OPEN'),
   skills: z.array(z.string().trim().min(1).max(60)).max(30).default([]),
 }).refine((data) => data.minBudget <= data.maxBudget, {
   message: 'Minimum budget cannot exceed maximum budget',
@@ -42,7 +43,7 @@ export const updateProjectSchema = z.object({
   category: z.string().trim().min(2).max(80).optional(),
   minBudget: z.coerce.number().finite().positive().max(1_000_000_000).optional(),
   maxBudget: z.coerce.number().finite().positive().max(1_000_000_000).optional(),
-  status: z.literal('CANCELLED').optional(),
+  status: z.enum(['OPEN', 'CANCELLED']).optional(),
   deadline: deadlineSchema,
 }).refine((data) => data.minBudget === undefined || data.maxBudget === undefined || data.minBudget <= data.maxBudget, {
   message: 'Minimum budget cannot exceed maximum budget',

@@ -137,6 +137,10 @@ export async function uploadProjectFile(req: Request, res: Response, next: NextF
     });
     if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
 
+    if (!['OPEN', 'IN_PROGRESS'].includes(project.status)) {
+      return res.status(409).json({ success: false, error: 'Files can only be added to open or active projects' });
+    }
+
     const isClientOwner = project.client.userId === req.user.id;
     const isHiredFreelancer = !!req.user.freelancerProfileId && project.contracts.some(
       (contract) => contract.freelancerProfileId === req.user!.freelancerProfileId,
