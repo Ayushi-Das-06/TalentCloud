@@ -62,13 +62,18 @@ Last audited: 2026-10-10. “Implemented” means present in the repository; “
 - [x] In-memory queue success/retry/exhaustion tests; resume handler includes completed-job idempotence and failed-status recording.
 - [ ] Load/burst and process-restart recovery test against Redis.
 
+## Dependency security
+
+- [x] VERIFIED COMPLETE — Frontend dependencies updated to React Router 7.18.4, Vite 8.3.4, and Tailwind CSS 4.3.3 with the Vite integration. TypeScript/production build passes and `npm audit` reports zero frontend advisories. Commit: pending.
+- [ ] BLOCKED — Backend `npm audit --omit=dev` reports three high-severity entries through Prisma 6.19.3 → `@prisma/config` → `deepmerge-ts` 7.1.5. Safe and forced audit-fix dry runs make no changes. The available remedy requires a Prisma major migration; no override was applied because the supported upgrade changes client generation, database adapters/configuration, and SQLite/PostgreSQL setup. Complete a tested Prisma migration before deployment.
+
 ## Frontend and quality
 
 - [x] Landing, discovery, project details, client/freelancer dashboards, proposal review, workspace with task attachments, skill-gap, estimator, and admin queue screens exist.
 - [x] Frontend production build passes with route-level code splitting. The initial JavaScript chunk is about 233 kB; the Recharts chunk is about 372 kB.
 - [x] Backend TypeScript build passes; current test count is recorded in `TESTING.md`.
 - [ ] Browser-driven end-to-end coverage and accessibility review.
-- [ ] Dependency audit is clean. The current report retains high-severity Prisma config dependency advisories; see `TESTING.md`.
+- [ ] BLOCKED — Frontend dependency audit is clean; the backend audit retains three high-severity Prisma config dependency advisories. See `Dependency security` and `TESTING.md`.
 
 ## Cloud deployment
 

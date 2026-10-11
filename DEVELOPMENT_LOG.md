@@ -55,3 +55,4 @@
 - Checkpoint: `4b8ee68` (`test(reviews): cover reciprocal and duplicate eligibility`).
 - Database setup verification: fresh disposable SQLite schema push and seed succeeded (6 users, 3 projects, 12 skills); both Prisma schemas validated. Independent `npm run prisma:generate` reproduces Windows `EPERM` replacing the query-engine DLL while a Node/tsx process holds it. PostgreSQL validation used a placeholder URL; no server was contacted.
 - Checkpoint: `5b53d3f` (`docs(database): record local setup verification`).
+- Frontend supply-chain upgrade: React Router 7.18.4, Vite 8.3.4, @vitejs/plugin-react 6.1.2, and Tailwind CSS 4.3.3 with its Vite plugin. Build passed; custom brand/slate utilities remain compiled; full frontend npm audit reports zero advisories. Backend Prisma audit still has three high-severity transitive advisories; audit-fix dry runs made no changes.

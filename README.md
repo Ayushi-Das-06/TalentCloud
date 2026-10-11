@@ -4,7 +4,7 @@ TalentCloud is a cloud-based freelancing and project marketplace with client and
 
 ## Current implementation
 
-- React 18, TypeScript, Vite, React Router, TanStack Query, Tailwind CSS, and Recharts frontend.
+- React 18, TypeScript, Vite 8, React Router 7, TanStack Query, Tailwind CSS 4, and Recharts frontend.
 - Express 4, TypeScript, Prisma, and SQLite for local development. A PostgreSQL Prisma schema is provided for containers and hosted deployments.
 - JWT authentication, role checks, project/application/hiring/task/review/notification APIs, local file storage, and a resume analysis worker.
 - In-memory jobs for local runs; BullMQ/Redis and AWS SQS have queue adapters and a separate worker process.
