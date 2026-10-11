@@ -1,6 +1,6 @@
 # TalentCloud Implementation Audit
 
-Last audited: 2026-10-10. “Implemented” means present in the repository; “verified” means exercised by the local build or tests noted in `TESTING.md`. Detailed statuses are in `PROJECT_AUDIT.md`.
+Last audited: 2026-10-12. “Implemented” means present in the repository; “verified” means exercised by the local build or tests noted in `TESTING.md`. Detailed statuses are in `PROJECT_AUDIT.md`.
 
 ## Foundation
 
@@ -15,6 +15,7 @@ Last audited: 2026-10-10. “Implemented” means present in the repository; “
 - [x] Seed script provides client, freelancer, admin, projects, applications, skills, and demonstration records. It clears the configured database before reseeding.
 - [x] VERIFIED COMPLETE — A clean disposable SQLite database was initialized with `npm run prisma:push`, seeded, and counted (6 users, 3 projects, 12 skills); the temp database was removed. SQLite and PostgreSQL schemas both validate (PostgreSQL used a placeholder URL, no server connection). Commit: `5b53d3f`.
 - [ ] BLOCKED — `npm run prisma:generate` fails on Windows with `EPERM` replacing `backend/node_modules/.prisma/client/query_engine-windows.dll.node` because an active Node/tsx process has that DLL loaded. Stop the TalentCloud process using it and rerun generation; if the lock persists, use a workspace outside OneDrive. The existing generated client still builds and ran the local E2E suite.
+- [x] VERIFIED COMPLETE — S3 storage now fails fast unless `S3_BUCKET_NAME` is explicitly configured; it no longer silently targets a generic bucket name. Empty and valid bucket configuration regression tests passed. Commit checkpoint pending.
 - [x] Registration, login, current-user, and logout endpoints; client/freelancer/admin authorization; protected admin endpoints.
 - [x] React login/register state and protected routes.
 - [ ] Broader API integration coverage for suspension, ownership edge cases, and role escalation; focused regressions and a SQLite lifecycle smoke cover core behavior.
@@ -65,7 +66,7 @@ Last audited: 2026-10-10. “Implemented” means present in the repository; “
 ## Dependency security
 
 - [x] VERIFIED COMPLETE — Frontend dependencies updated to React Router 7.18.4, Vite 8.3.4, and Tailwind CSS 4.3.3 with the Vite integration. TypeScript/production build passes and `npm audit` reports zero frontend advisories. Commit: `046b2c5`.
-- [ ] BLOCKED — Backend `npm audit --omit=dev` reports three high-severity entries through Prisma 6.19.3 → `@prisma/config` → `deepmerge-ts` 7.1.5. Safe and forced audit-fix dry runs make no changes. The available remedy requires a Prisma major migration; no override was applied because the supported upgrade changes client generation, database adapters/configuration, and SQLite/PostgreSQL setup. Complete a tested Prisma migration before deployment.
+- [ ] BLOCKED — Backend `npm audit --omit=dev` reports three high-severity entries through Prisma 6.19.3 → `@prisma/config` → `deepmerge-ts`. `npm audit fix --dry-run` makes no dependency changes. No override was applied; resolve through a compatible, tested Prisma dependency update before deployment.
 
 ## Frontend and quality
 

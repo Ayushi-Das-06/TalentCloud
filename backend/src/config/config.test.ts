@@ -41,3 +41,18 @@ describe('shared rate-limit Redis configuration', () => {
     expect(config.rateLimit.redisUrl).toBe('rediss://rate-limiter.example:6380');
   });
 });
+
+describe('object storage configuration', () => {
+  it('requires an explicit bucket when S3 storage is enabled', async () => {
+    vi.stubEnv('STORAGE_DRIVER', 's3');
+    vi.stubEnv('S3_BUCKET_NAME', '   ');
+    await expect(import('./index.js')).rejects.toThrow(/S3_BUCKET_NAME is required/i);
+  });
+
+  it('accepts a configured S3 bucket', async () => {
+    vi.stubEnv('STORAGE_DRIVER', 's3');
+    vi.stubEnv('S3_BUCKET_NAME', 'talentcloud-private-test');
+    const { config } = await import('./index.js');
+    expect(config.storage.s3.bucket).toBe('talentcloud-private-test');
+  });
+});

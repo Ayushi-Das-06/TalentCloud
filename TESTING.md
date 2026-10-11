@@ -18,7 +18,7 @@ npm run build
 
 - Backend TypeScript build: passed.
 - SQLite and PostgreSQL Prisma schemas validate; PostgreSQL validation used a placeholder URL and did not connect to a server. Backend build passes against the checked/generated client. Regenerating the SQLite Prisma client currently fails with Windows `EPERM` replacing the query-engine DLL while an active Node/tsx process has it loaded; stop that process and rerun `npm run prisma:generate`.
-- Backend test suite: 9 files, 39 tests passed. Coverage includes production and Redis config validation, public project privacy/visibility/query validation, pagination limits, shared Redis counter key/expiry behavior, auth rate limits, upload signatures, storage traversal/deletion, in-memory queue retry behavior, intelligent features, document parsing, and API access gates.
+- Backend test suite: 9 files, 41 tests passed. Coverage includes production, Redis, and S3 config validation, public project privacy/visibility/query validation, pagination limits, shared Redis counter key/expiry behavior, auth rate limits, upload signatures, storage traversal/deletion, in-memory queue retry behavior, intelligent features, document parsing, and API access gates.
 - `npm run prisma:push` synchronized a fresh disposable SQLite database and `npm run seed` populated 6 users, 3 projects, and 12 skills. A Prisma client regeneration warning occurred during `db push` because of the active DLL lock; seeding succeeded with the existing client. The disposable database was removed.
 - `npm run test:e2e` passed against a clean temporary SQLite database using the in-memory rate-limit fallback: readiness, registration, draft privacy/publication/deletion, proposals and pagination, concurrent hiring/withdrawal/cancellation consistency, task access, attachment upload/access/deletion, resume worker/skill confirmation, contract completion, notification privacy, and reciprocal/duplicate review behavior.
 - Frontend TypeScript check and production build: passed with Vite 8.3.4, React Router 7.18.4, and Tailwind CSS 4.3.3. The initial JavaScript chunk is 231.14 kB minified; Recharts is isolated in a 367.64 kB chunk.
@@ -33,6 +33,7 @@ npm run build
 - Browser-driven E2E and accessibility review.
 - Docker is not installed. AWS credentials/account are not available and no cloud resources were provisioned.
 - S3 deletion uses the AWS SDK `DeleteObject` operation but has not been exercised against a live bucket.
+- The S3 adapter now requires an explicit bucket name at startup; empty and valid S3 bucket configuration cases are covered by unit tests.
 
 ## Dependency audit
 

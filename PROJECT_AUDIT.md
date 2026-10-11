@@ -1,6 +1,6 @@
 # TalentCloud project audit
 
-Last reviewed: 2026-10-11. Completion estimates are approximate, based on the requested scope and verified repository state. “Complete and tested” means locally exercised by the documented build or test; adapters requiring live infrastructure are not counted as tested.
+Last reviewed: 2026-10-12. Completion estimates are approximate, based on the requested scope and verified repository state. “Complete and tested” means locally exercised by the documented build or test; adapters requiring live infrastructure are not counted as tested.
 
 ## Complete and tested
 
@@ -18,14 +18,15 @@ Last reviewed: 2026-10-11. Completion estimates are approximate, based on the re
 - Limits cover login/registration, file uploads, and computational matching endpoints. They can use process-local memory or shared Redis fixed-window counters.
 - Optional shared Redis fixed-window counters distribute those limits across API replicas; local development can continue using the in-memory default.
 - Private local/S3 storage supports upload, retrieval, deletion, random keys, path containment, and membership/ownership checks. Local storage behavior and deletion are tested.
+- S3 mode fails startup when `S3_BUCKET_NAME` is absent or blank, avoiding a silent fallback to a generic bucket. Configuration tests cover both missing and explicit bucket cases.
 - Resume parsing supports PDF, DOCX, TXT, and Markdown; suggestions are unverified until the freelancer confirms them in the dashboard.
 - Memory queue success, bounded retry, exhausted failure, and file-reference payload behavior are unit tested. BullMQ/SQS adapters and a standalone worker are implemented.
 - Separate liveness and database readiness probes are available; the API container health check uses readiness so it does not report healthy while PostgreSQL is unavailable.
 - Frontend role-based login redirect, profile editing, notification read/unread controls, resume status/skill confirmation, application/hiring, workspace tasks/files, matching, skill gap, and estimator flows are connected to existing APIs.
 - Project attachment delete action works through the authorized API and storage abstraction.
 - Freelancer discovery profile links now resolve to a public read-only profile detail page; profile edits use protected APIs.
-- Backend build and 39 backend tests pass; a clean, disposable SQLite registration-to-review E2E smoke passes, including readiness, draft publication/deletion, paginated proposals, concurrent hire/withdrawal/cancellation state consistency, private attachment access, worker processing, notification privacy, and reciprocal/duplicate review checks. Frontend type check and production build pass. Both Prisma schemas validate.
-- Current verification: backend build and 39 tests pass; fresh SQLite push/seed succeeds with an existing generated client, and both schemas validate. Prisma Client regeneration fails with `EPERM` while a Node/tsx process holds the Windows query-engine DLL; the PostgreSQL schema check uses a placeholder URL, with no PostgreSQL service tested.
+- Backend build and 41 backend tests pass; a clean, disposable SQLite registration-to-review E2E smoke passes, including readiness, draft publication/deletion, paginated proposals, concurrent hire/withdrawal/cancellation state consistency, private attachment access, worker processing, notification privacy, and reciprocal/duplicate review checks. Frontend type check and production build pass. Both Prisma schemas validate.
+- Current verification: backend build and 41 tests pass; fresh SQLite push/seed succeeds with an existing generated client, and both schemas validate. Prisma Client regeneration fails with `EPERM` while a Node/tsx process holds the Windows query-engine DLL; the PostgreSQL schema check uses a placeholder URL, with no PostgreSQL service tested.
 - The seeded `backend/prisma/dev.db` contains demo marketplace rows and password hashes. It is now excluded from the branch tip and ignored for future changes; the local working file is preserved. Existing Git history was not rewritten.
 - Changes are committed on `codex/talentcloud-audit` and pushed without modifying `main`.
 

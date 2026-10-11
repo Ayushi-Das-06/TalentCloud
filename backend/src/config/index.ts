@@ -12,6 +12,7 @@ const jwtSecret = process.env.JWT_SECRET || (isProduction ? '' : developmentJwtS
 const cookieSecret = process.env.COOKIE_SECRET || (isProduction ? '' : developmentCookieSecret);
 const queueDriver = process.env.QUEUE_DRIVER || 'memory';
 const storageDriver = process.env.STORAGE_DRIVER || 'local';
+const s3Bucket = process.env.S3_BUCKET_NAME?.trim() || '';
 const rateLimitRedisUrl = process.env.RATE_LIMIT_REDIS_URL || '';
 const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS || 0);
 const matchingWeights = {
@@ -28,6 +29,9 @@ if (!['memory', 'bullmq', 'sqs'].includes(queueDriver)) {
 }
 if (!['local', 's3'].includes(storageDriver)) {
   throw new Error('STORAGE_DRIVER must be local or s3.');
+}
+if (storageDriver === 's3' && !s3Bucket) {
+  throw new Error('S3_BUCKET_NAME is required when STORAGE_DRIVER=s3.');
 }
 if (rateLimitRedisUrl) {
   let protocol = '';
@@ -89,7 +93,7 @@ export const config = {
     s3: {
       endpoint: process.env.S3_ENDPOINT,
       region: process.env.S3_REGION || process.env.AWS_REGION || 'us-east-1',
-      bucket: process.env.S3_BUCKET_NAME || 'freelance-marketplace-files',
+      bucket: s3Bucket,
       accessKeyId: process.env.S3_ACCESS_KEY_ID,
       secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
     },

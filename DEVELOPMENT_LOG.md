@@ -57,3 +57,10 @@
 - Checkpoint: `5b53d3f` (`docs(database): record local setup verification`).
 - Frontend supply-chain upgrade: React Router 7.18.4, Vite 8.3.4, @vitejs/plugin-react 6.1.2, and Tailwind CSS 4.3.3 with its Vite plugin. Build passed; custom brand/slate utilities remain compiled; full frontend npm audit reports zero advisories. Backend Prisma audit still has three high-severity transitive advisories; audit-fix dry runs made no changes.
 - Checkpoint: `046b2c5` (`chore(frontend): upgrade vulnerable build dependencies`).
+
+## 2026-10-12 — Continued AWS readiness and verification
+
+- Re-ran the current backend suite (9 files, 41 tests), backend TypeScript build, full disposable SQLite E2E, frontend TypeScript/production build, and both dependency audits. All builds/tests passed; frontend audit found zero vulnerabilities; backend audit still reports three high Prisma config/deepmerge advisories.
+- Tightened S3 configuration so `STORAGE_DRIVER=s3` requires an explicit nonblank `S3_BUCKET_NAME`; added missing/valid bucket tests. This prevents misconfigured environments from silently selecting a generic bucket name.
+- Reviewed AWS adapters and deployment readiness against the implemented code. AWS integration remains gated on a clean backend dependency audit, successful Prisma Client regeneration, and local Docker/PostgreSQL/Redis/MinIO smoke tests. No AWS account, credentials, or resources were used.
+- Checkpoint: S3 fail-fast configuration and documentation update; pushed checkpoint recorded after commit.
