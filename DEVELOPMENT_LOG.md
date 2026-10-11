@@ -51,3 +51,4 @@
 - Checkpoint: `49c57b4` (`fix(applications): make hiring and withdrawal atomic`).
 - Notification privacy regression: list and mark-read operations remain recipient-scoped; cross-user mark-read now returns 404 instead of false success. E2E verified an application notification is visible to its client only and remains unread after another user attempts access. Backend build, all 39 tests, and full SQLite E2E passed.
 - Checkpoint: `4b36fe2` (`fix(notifications): enforce recipient ownership`).
+- Review eligibility coverage: SQLite E2E confirmed both completed-contract participants can review each other, unrelated freelancers are rejected, and duplicate review submission returns 409.

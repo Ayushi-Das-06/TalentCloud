@@ -267,6 +267,21 @@ try {
     json: { projectId, revieweeId: hired.user.id, rating: 5, feedback: 'Clear communication and reliable delivery.' },
   });
   pass(review.response.status === 201, 'completed-contract participant submits review');
+  const duplicateReview = await request(baseUrl, '/reviews', {
+    method: 'POST', token: client.token,
+    json: { projectId, revieweeId: hired.user.id, rating: 5, feedback: 'A second rating should not be accepted.' },
+  });
+  pass(duplicateReview.response.status === 409, 'duplicate project review is rejected');
+  const outsiderReview = await request(baseUrl, '/reviews', {
+    method: 'POST', token: otherFreelancer.token,
+    json: { projectId, revieweeId: client.user.id, rating: 4, feedback: 'I was not a contract participant.' },
+  });
+  pass(outsiderReview.response.status === 403, 'nonparticipant cannot review completed project');
+  const reciprocalReview = await request(baseUrl, '/reviews', {
+    method: 'POST', token: hired.token,
+    json: { projectId, revieweeId: client.user.id, rating: 5, feedback: 'Clear requirements and helpful collaboration.' },
+  });
+  pass(reciprocalReview.response.status === 201, 'both completed-contract participants can review each other');
 
   const raceProjectResult = await request(baseUrl, '/projects', {
     method: 'POST', token: client.token,
