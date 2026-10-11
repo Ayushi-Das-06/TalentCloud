@@ -39,3 +39,4 @@
 
 - Complete integration/E2E coverage, actual Docker/AWS deployment validation, and resolve the Prisma config dependency advisories.
 - Resolve remaining Prisma config dependency advisories through a compatible, verified Prisma upgrade.
+- Checkpoint: `83b4b5d` (`fix(hiring): prevent cancellation and hire race`). The verified fix and its E2E regression were committed on `codex/talentcloud-audit`.
