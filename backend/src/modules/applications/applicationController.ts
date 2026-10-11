@@ -43,16 +43,28 @@ export async function submitApplication(req: Request, res: Response, next: NextF
       return res.status(409).json({ success: false, error: 'You have already applied to this project' });
     }
 
-    const application = await prisma.application.create({
-      data: {
-        projectId,
-        freelancerProfileId: profile.id,
-        coverLetter,
-        proposedBudget: budgetOffer,
-        estimatedDays: Number(estimatedDays),
-        status: 'PENDING',
-      },
+    const application = await prisma.$transaction(async (tx) => {
+      // Serialize application creation with publish, cancel, and hiring state
+      // transitions so a proposal cannot land after a project stops accepting.
+      const projectClaim = await tx.project.updateMany({
+        where: { id: projectId, status: 'OPEN' },
+        data: { updatedAt: new Date() },
+      });
+      if (projectClaim.count !== 1) return null;
+      return tx.application.create({
+        data: {
+          projectId,
+          freelancerProfileId: profile.id,
+          coverLetter,
+          proposedBudget: budgetOffer,
+          estimatedDays: Number(estimatedDays),
+          status: 'PENDING',
+        },
+      });
     });
+    if (!application) {
+      return res.status(409).json({ success: false, error: 'Project state changed; refresh before applying' });
+    }
 
     // Notify project client
     const projectWithClient = await prisma.project.findUnique({
@@ -173,10 +185,16 @@ export async function withdrawApplication(req: Request, res: Response, next: Nex
       return res.status(400).json({ success: false, error: 'Only pending applications can be withdrawn' });
     }
 
-    const updated = await prisma.application.update({
-      where: { id },
+    const claim = await prisma.application.updateMany({
+      where: { id, freelancerProfileId: profile.id, status: 'PENDING' },
       data: { status: 'WITHDRAWN' },
     });
+    if (claim.count !== 1) {
+      return res.status(409).json({ success: false, error: 'Application state changed; refresh before trying again' });
+    }
+
+    const updated = await prisma.application.findUnique({ where: { id } });
+    if (!updated) return res.status(404).json({ success: false, error: 'Application not found' });
 
     return res.json({ success: true, data: updated });
   } catch (err) {

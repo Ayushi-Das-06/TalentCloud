@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../../db/prisma.js';
 
+class HiringTransitionConflict extends Error {}
+
 export async function hireFreelancer(req: Request, res: Response, next: NextFunction) {
   try {
     if (!req.user || req.user.role !== 'CLIENT') {
@@ -56,7 +58,13 @@ export async function hireFreelancer(req: Request, res: Response, next: NextFunc
         where: { id: application.projectId, status: 'OPEN' },
         data: { status: 'IN_PROGRESS' },
       });
-      if (projectClaim.count !== 1) return null;
+      if (projectClaim.count !== 1) throw new HiringTransitionConflict();
+
+      const applicationClaim = await tx.application.updateMany({
+        where: { id: application.id, projectId: application.projectId, status: 'PENDING' },
+        data: { status: 'ACCEPTED' },
+      });
+      if (applicationClaim.count !== 1) throw new HiringTransitionConflict();
 
       // 1. Create contract
       const contract = await tx.contract.create({
@@ -71,13 +79,7 @@ export async function hireFreelancer(req: Request, res: Response, next: NextFunc
         },
       });
 
-      // 2. Accept this application
-      await tx.application.update({
-        where: { id: application.id },
-        data: { status: 'ACCEPTED' },
-      });
-
-      // 3. Reject all other competing applications for this project
+      // 2. Reject all other competing applications for this project
       const competing = await tx.application.findMany({
         where: {
           projectId: application.projectId,
@@ -96,7 +98,7 @@ export async function hireFreelancer(req: Request, res: Response, next: NextFunc
         data: { status: 'REJECTED' },
       });
 
-      // 4. Create default kick-off task
+      // 3. Create default kick-off task
       await tx.task.create({
         data: {
           projectId: application.projectId,
@@ -111,7 +113,7 @@ export async function hireFreelancer(req: Request, res: Response, next: NextFunc
         },
       });
 
-      // 5. Notify hired freelancer
+      // 4. Notify hired freelancer
       await tx.notification.create({
         data: {
           userId: application.freelancerProfile.userId,
@@ -122,7 +124,7 @@ export async function hireFreelancer(req: Request, res: Response, next: NextFunc
         },
       });
 
-      // 6. Notify competing candidates
+      // 5. Notify competing candidates
       for (const comp of competing) {
         await tx.notification.create({
           data: {
@@ -138,12 +140,11 @@ export async function hireFreelancer(req: Request, res: Response, next: NextFunc
       return contract;
     });
 
-    if (!result) {
-      return res.status(409).json({ success: false, error: 'Another proposal was already selected for this project' });
-    }
-
     return res.status(201).json({ success: true, data: result });
   } catch (err) {
+    if (err instanceof HiringTransitionConflict) {
+      return res.status(409).json({ success: false, error: 'Project or application state changed; refresh before trying again' });
+    }
     next(err);
   }
 }

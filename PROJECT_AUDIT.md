@@ -10,6 +10,7 @@ Last reviewed: 2026-10-11. Completion estimates are approximate, based on the re
 - Public discovery exposes open projects only. Public profile responses omit email and hide suspended profiles.
 - Client project proposal listings are paginated with a validated page size capped at 50; the client proposal screen exposes next/previous page controls.
 - Project cancellation atomically claims only an `OPEN` project owned by the requesting client, preventing a concurrent hire from leaving an active contract on a cancelled project.
+- Application creation checks and claims an `OPEN` project within its transaction; hiring claims the proposal's `PENDING` state before creating a contract, and withdrawal is conditional on both owner and pending status.
 - Clients can save private drafts, publish their own drafts, and delete only empty drafts; related work/files block deletion. Draft publication and cancellation use state-conditional updates, and uploads require an open or active project.
 - Request validation covers authentication, project create/update and discovery, application/hire/review/task/profile writes, supported route UUIDs, and upload metadata/content signatures.
 - Limits cover login/registration, file uploads, and computational matching endpoints. They can use process-local memory or shared Redis fixed-window counters.

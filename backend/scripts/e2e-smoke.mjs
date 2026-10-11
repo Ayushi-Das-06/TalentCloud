@@ -173,6 +173,40 @@ try {
   const hired = applications.find(({ applicationId }) => applicationId === contract.applicationId).freelancer;
   const otherFreelancer = applications.find(({ applicationId }) => applicationId !== contract.applicationId).freelancer;
 
+  const transitionProjectResult = await request(baseUrl, '/projects', {
+    method: 'POST', token: client.token,
+    json: {
+      title: 'E2E withdrawal and hiring race',
+      description: 'Verify withdrawal and hiring cannot produce a conflicting accepted proposal.',
+      category: 'Cloud / DevOps', minBudget: 250, maxBudget: 500,
+      estimatedDurationDays: 30, skills: ['TypeScript'],
+    },
+  });
+  pass(transitionProjectResult.response.status === 201, 'create withdrawal race project');
+  const transitionProjectId = transitionProjectResult.data.data.id;
+  const transitionApplication = await request(baseUrl, '/applications', {
+    method: 'POST', token: hired.token,
+    json: { projectId: transitionProjectId, coverLetter: 'I can deliver this race-safe workflow.', proposedBudget: 300, estimatedDays: 20 },
+  });
+  pass(transitionApplication.response.status === 201, 'submit withdrawal race proposal');
+  const transitionApplicationId = transitionApplication.data.data.id;
+  const unauthorizedWithdrawal = await request(baseUrl, `/applications/${transitionApplicationId}/withdraw`, {
+    method: 'POST', token: otherFreelancer.token,
+  });
+  pass(unauthorizedWithdrawal.response.status === 403, 'freelancer cannot withdraw another profile application');
+  const [withdrawalRace, hiringRace] = await Promise.all([
+    request(baseUrl, `/applications/${transitionApplicationId}/withdraw`, { method: 'POST', token: hired.token }),
+    request(baseUrl, '/hiring/hire', { method: 'POST', token: client.token, json: { applicationId: transitionApplicationId } }),
+  ]);
+  const finalTransitionProject = await request(baseUrl, `/projects/${transitionProjectId}`, { token: client.token });
+  const finalApplications = await request(baseUrl, '/applications/my-applications', { token: hired.token });
+  const finalTransitionApplication = finalApplications.data.data.find((item) => item.id === transitionApplicationId);
+  const hireWon = hiringRace.response.status === 201 && withdrawalRace.response.status !== 200 &&
+    finalTransitionProject.data.data.status === 'IN_PROGRESS' && finalTransitionApplication?.status === 'ACCEPTED';
+  const withdrawalWon = withdrawalRace.response.status === 200 && hiringRace.response.status !== 201 &&
+    finalTransitionProject.data.data.status === 'OPEN' && finalTransitionApplication?.status === 'WITHDRAWN';
+  pass(hireWon || withdrawalWon, 'concurrent proposal withdrawal and hiring leave consistent state');
+
   const tasksResult = await request(baseUrl, `/tasks/project/${projectId}`, { token: hired.token });
   pass(tasksResult.response.status === 200 && tasksResult.data.data.length === 1, 'hired freelancer sees kickoff task');
   const taskId = tasksResult.data.data[0].id;
@@ -250,7 +284,7 @@ try {
     'concurrent cancellation and hiring preserve a consistent project/contract state',
   );
 
-  console.log('E2E smoke passed: registration, draft publication/deletion, proposals, concurrent hiring/cancellation state, private files, resume worker/skill confirmation, contract completion, and review.');
+  console.log('E2E smoke passed: registration, draft publication/deletion, proposals, concurrent hiring/withdrawal/cancellation consistency, private files, resume worker/skill confirmation, contract completion, and review.');
 } finally {
   if (apiProcess && apiProcess.exitCode === null) {
     apiProcess.kill(process.platform === 'win32' ? undefined : 'SIGTERM');
