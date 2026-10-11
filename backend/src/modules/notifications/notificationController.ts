@@ -26,10 +26,11 @@ export async function markAsRead(req: Request, res: Response, next: NextFunction
     if (!req.user) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
     const { id } = req.params;
-    await prisma.notification.updateMany({
+    const result = await prisma.notification.updateMany({
       where: { id, userId: req.user.id },
       data: { isRead: true },
     });
+    if (result.count !== 1) return res.status(404).json({ success: false, error: 'Notification not found' });
 
     return res.json({ success: true, message: 'Notification marked as read' });
   } catch (err) {

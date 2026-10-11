@@ -161,6 +161,18 @@ try {
     applications.push({ applicationId: data.data.id, freelancer });
   }
 
+  const clientNotifications = await request(baseUrl, '/notifications', { token: client.token });
+  const freelancerNotifications = await request(baseUrl, '/notifications', { token: freelancerOne.token });
+  const applicationNotice = clientNotifications.data.data.find((item) => item.link === `/client/projects/${projectId}/applications`);
+  pass(!!applicationNotice && !freelancerNotifications.data.data.some((item) => item.id === applicationNotice.id), 'application notification is private to its client recipient');
+  const unauthorizedNotificationRead = await request(baseUrl, `/notifications/${applicationNotice.id}/read`, {
+    method: 'PATCH', token: freelancerOne.token,
+  });
+  const clientNotificationsAfterDeniedRead = await request(baseUrl, '/notifications', { token: client.token });
+  pass(unauthorizedNotificationRead.response.status === 404 &&
+    clientNotificationsAfterDeniedRead.data.data.find((item) => item.id === applicationNotice.id)?.isRead === false,
+  'non-recipient cannot read or mark another user notification');
+
   const proposalPage = await request(baseUrl, `/applications/project/${projectId}?page=1&limit=1`, { token: client.token });
   pass(proposalPage.response.status === 200 && proposalPage.data.data.length === 1 && proposalPage.data.pagination.total === 2, 'client proposal list paginates with total count');
 
