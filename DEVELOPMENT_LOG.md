@@ -40,3 +40,4 @@
 - Complete integration/E2E coverage, actual Docker/AWS deployment validation, and resolve the Prisma config dependency advisories.
 - Resolve remaining Prisma config dependency advisories through a compatible, verified Prisma upgrade.
 - Checkpoint: `83b4b5d` (`fix(hiring): prevent cancellation and hire race`). The verified fix and its E2E regression were committed on `codex/talentcloud-audit`.
+- Redis rate-limit checkpoint review: the Redis store/config tests passed (7 tests) and API security tests passed (7 tests). A live shared-Redis request test remains blocked because Redis, Docker, and a reachable local Redis endpoint are unavailable; rate-limit storage errors are intentionally not logged with connection details.

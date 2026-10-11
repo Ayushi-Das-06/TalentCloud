@@ -17,6 +17,10 @@ Last audited: 2026-10-10. “Implemented” means present in the repository; “
 - [x] React login/register state and protected routes.
 - [ ] Broader API integration coverage for suspension, ownership edge cases, and role escalation; focused regressions and a SQLite lifecycle smoke cover core behavior.
 
+## Security verification status
+
+- [ ] BLOCKED — Shared Redis rate limiting is implemented with atomic Redis counters, TLS URL validation, and a local in-memory fallback when Redis is not configured. Redis-store/config tests (7 tests) and API security tests (7 tests) pass. A live Redis-backed HTTP test is not run: this environment has no Redis server or Docker, and localhost:6379 is unreachable. Verify with the Compose Redis service or a secured Redis instance before marking this item complete.
+
 ## Marketplace workflows
 
 - [x] Freelancer and client profile APIs, skill management, project creation/editing/discovery, proposals, hiring, contract completion, tasks, reviews, and notifications are implemented.
