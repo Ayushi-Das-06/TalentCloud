@@ -28,3 +28,16 @@ describe('production secret configuration', () => {
     expect(config.jwt.secret).toBe('unique-jwt-secret-value-for-production-123456');
   });
 });
+
+describe('shared rate-limit Redis configuration', () => {
+  it('rejects a malformed Redis connection URL', async () => {
+    vi.stubEnv('RATE_LIMIT_REDIS_URL', 'https://not-redis.example');
+    await expect(import('./index.js')).rejects.toThrow(/RATE_LIMIT_REDIS_URL must be a valid redis/i);
+  });
+
+  it('accepts a TLS Redis URL', async () => {
+    vi.stubEnv('RATE_LIMIT_REDIS_URL', 'rediss://rate-limiter.example:6380');
+    const { config } = await import('./index.js');
+    expect(config.rateLimit.redisUrl).toBe('rediss://rate-limiter.example:6380');
+  });
+});

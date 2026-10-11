@@ -77,6 +77,7 @@ try {
     STORAGE_LOCAL_PATH: storagePath,
     QUEUE_DRIVER: 'memory',
     TRUST_PROXY_HOPS: '0',
+    RATE_LIMIT_REDIS_URL: '',
   };
   apiProcess = spawn(process.execPath, [serverEntry], { cwd: backendDir, env: serviceEnvironment, stdio: 'ignore' });
   await waitForHealth(baseUrl, apiProcess);

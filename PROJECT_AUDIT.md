@@ -1,6 +1,6 @@
 # TalentCloud project audit
 
-Last reviewed: 2026-10-10. Completion estimates are approximate, based on the requested scope and verified repository state. “Complete and tested” means locally exercised by the documented build or test; adapters requiring live infrastructure are not counted as tested.
+Last reviewed: 2026-10-11. Completion estimates are approximate, based on the requested scope and verified repository state. “Complete and tested” means locally exercised by the documented build or test; adapters requiring live infrastructure are not counted as tested.
 
 ## Complete and tested
 
@@ -10,7 +10,8 @@ Last reviewed: 2026-10-10. Completion estimates are approximate, based on the re
 - Public discovery exposes open projects only. Public profile responses omit email and hide suspended profiles.
 - Client project proposal listings are paginated with a validated page size capped at 50; the client proposal screen exposes next/previous page controls.
 - Request validation covers authentication, project create/update and discovery, application/hire/review/task/profile writes, supported route UUIDs, and upload metadata/content signatures.
-- Per-process limits cover login/registration, file uploads, and computational matching endpoints.
+- Limits cover login/registration, file uploads, and computational matching endpoints. They can use process-local memory or shared Redis fixed-window counters.
+- Optional shared Redis fixed-window counters distribute those limits across API replicas; local development can continue using the in-memory default.
 - Private local/S3 storage supports upload, retrieval, deletion, random keys, path containment, and membership/ownership checks. Local storage behavior and deletion are tested.
 - Resume parsing supports PDF, DOCX, TXT, and Markdown; suggestions are unverified until the freelancer confirms them in the dashboard.
 - Memory queue success, bounded retry, exhausted failure, and file-reference payload behavior are unit tested. BullMQ/SQS adapters and a standalone worker are implemented.
@@ -18,7 +19,7 @@ Last reviewed: 2026-10-10. Completion estimates are approximate, based on the re
 - Frontend role-based login redirect, profile editing, notification read/unread controls, resume status/skill confirmation, application/hiring, workspace tasks/files, matching, skill gap, and estimator flows are connected to existing APIs.
 - Project attachment delete action works through the authorized API and storage abstraction.
 - Freelancer discovery profile links now resolve to a public read-only profile detail page; profile edits use protected APIs.
-- Backend build and 33 backend tests pass; a clean, disposable SQLite registration-to-review E2E smoke passes, including database readiness and paginated proposal-list verification. Frontend type check and production build pass. Both Prisma schemas validate and generate clients.
+- Backend build and 37 backend tests pass; a clean, disposable SQLite registration-to-review E2E smoke passes, including database readiness and paginated proposal-list verification. Frontend type check and production build pass. Both Prisma schemas validate and generate clients.
 - The seeded `backend/prisma/dev.db` contains demo marketplace rows and password hashes. It is now excluded from the branch tip and ignored for future changes; the local working file is preserved. Existing Git history was not rewritten.
 - Changes are committed on `codex/talentcloud-audit` and pushed without modifying `main`.
 
@@ -27,14 +28,14 @@ Last reviewed: 2026-10-10. Completion estimates are approximate, based on the re
 - Dockerfiles and Compose topology for frontend, API, independent worker, PostgreSQL, Redis/BullMQ, and MinIO/S3-compatible storage, including private bucket initialization.
 - PostgreSQL, S3, and SQS execution paths beyond schema generation/build and adapter-level behavior.
 - Signal-driven API/worker shutdown and resume-job idempotency against live dependencies.
-- Production rate limits across replicas; the current Express store is process-local.
+- Shared rate-limit store behavior is unit tested, but the Redis adapter has not been exercised against a live Redis server.
 - PostgreSQL service lifecycle and migrations; the PostgreSQL schema validates/generates and the local API E2E was exercised against SQLite.
 
 ## In progress
 
 - Broader API edge-case integration, browser-driven E2E, and PostgreSQL lifecycle coverage.
 - Accessibility review and pagination for other authenticated record-list endpoints. Project proposals now have validated, capped pagination.
-- Production-grade distributed rate limiting, file malware scanning/retention policy, infrastructure as code, observability dashboards, and recovery rehearsal.
+- File malware scanning/retention policy, infrastructure as code, observability dashboards, and recovery rehearsal.
 - Compatible fix for remaining Prisma dependency advisories.
 
 ## Blocked by user action

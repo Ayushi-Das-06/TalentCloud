@@ -18,15 +18,16 @@ npm run build
 
 - Backend TypeScript build: passed.
 - Both Prisma schemas validate and generate clients; the backend builds against generated PostgreSQL and SQLite clients.
-- Backend test suite: 8 files, 33 tests passed. Coverage includes production secret config, public project visibility/query validation, pagination limits, auth rate limits, upload signatures, storage traversal/deletion, in-memory queue success/retry/exhaustion, intelligent features, DOCX/text parsing, and API access gates.
+- Backend test suite: 9 files, 37 tests passed. Coverage includes production and Redis config validation, public project visibility/query validation, pagination limits, shared Redis counter key/expiry behavior, auth rate limits, upload signatures, storage traversal/deletion, in-memory queue success/retry/exhaustion, intelligent features, DOCX/text parsing, and API access gates.
 - `npm run prisma:push` successfully initialized a fresh ignored SQLite database using the empty-file helper. The seed script then ran against another disposable ignored database, producing 6 users, 3 projects, 2 applications, and 2 contracts.
-- `npm run test:e2e` passed against a clean temporary SQLite database: database readiness, registration, project creation, competing applications, paginated client proposal listing, concurrent hire with exactly one contract, task access, attachment upload/access/deletion, public visibility, resume upload/worker completion, skill confirmation, contract completion, and review.
+- `npm run test:e2e` passed against a clean temporary SQLite database using the in-memory rate-limit fallback: database readiness, registration, project creation, competing applications, paginated client proposal listing, concurrent hire with exactly one contract, task access, attachment upload/access/deletion, public visibility, resume upload/worker completion, skill confirmation, contract completion, and review.
 - Frontend TypeScript check and production build: passed. Route-level splitting reduced the initial JavaScript chunk from 719.28 kB to 232.52 kB minified; Recharts is isolated in a 372.43 kB chunk. Both are below Vite's 500 kB advisory threshold.
 - GitHub access check: authenticated fetch succeeded for the private repository. Before the implementation commit, `codex/talentcloud-audit` matched its upstream; after the commit, the verified commit was pushed as a fast-forward and local/upstream now point to the same revision.
 
 ## Not verified
 
 - PostgreSQL service lifecycle and Docker images/Compose. Docker is unavailable here; the tested API lifecycle used disposable SQLite.
+- Shared Redis rate-limit behavior against a running Redis instance. The fixed-window store is unit tested with a fake Redis client; local Compose wires the API to Redis.
 - Redis/BullMQ runtime and SQS/S3 live services. The in-memory resume worker was exercised end to end.
 - Browser-driven E2E and accessibility review.
 - Docker is not installed. AWS credentials/account are not available and no cloud resources were provisioned.

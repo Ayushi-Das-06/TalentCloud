@@ -23,9 +23,10 @@ flowchart LR
 - `backend/src/modules` groups API handlers by domain. Authentication middleware reloads the user and profile IDs on each protected request and rejects suspended accounts.
 - `backend/prisma/schema.prisma` is the local SQLite schema. `schema.postgres.prisma` is used to generate the PostgreSQL client in the container image.
 - The memory queue is useful for demos but is process-local and not durable. BullMQ uses Redis; BullMQ and SQS are consumed by a separate `worker.ts` process.
+- Login, upload, and expensive-operation rate limits default to per-process memory. Set `RATE_LIMIT_REDIS_URL` to use shared atomic fixed-window counters; local Compose points API replicas at Redis.
 - Resume files use local storage or S3 with random keys. Downloads stream through the API after owner/participant authorization.
 - Resume analysis and profile JSON fields use JSON text for compatible SQLite/PostgreSQL behavior. In-process memory jobs are demo-only and lost on process restart; Redis/BullMQ and SQS provide external queue durability, subject to their configured persistence/redrive settings.
 
 ## AWS status
 
-The project has PostgreSQL, S3, and SQS adapters and a local container topology for API, worker, PostgreSQL, Redis, and MinIO. AWS infrastructure templates, IAM policies, CloudWatch configuration, and live deployment are not implemented or verified.
+The project has PostgreSQL, S3, and SQS adapters and a local container topology for API, worker, PostgreSQL, Redis, and MinIO. AWS infrastructure templates, IAM policies, CloudWatch configuration, and live deployment are not implemented or verified. When the first AWS architecture uses SQS instead of ElastiCache, apply shared abuse limits at AWS WAF or another shared edge layer.

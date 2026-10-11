@@ -3,6 +3,7 @@ import { config } from './config/index.js';
 import { checkDatabaseConnection, prisma } from './db/prisma.js';
 import { initializeWorkerHandlers } from './worker.js';
 import { queueService } from './queue/queueAdapter.js';
+import { closeRateLimitStore } from './middleware/rateLimit.js';
 
 async function bootstrap() {
   console.log('--- Starting Cloud Marketplace API & Services ---');
@@ -25,6 +26,7 @@ async function bootstrap() {
     console.log(`[Server] Received ${signal}; closing HTTP and queue workers...`);
     server.close(async () => {
       await queueService.close();
+      await closeRateLimitStore();
       await prisma.$disconnect();
       process.exit(0);
     });

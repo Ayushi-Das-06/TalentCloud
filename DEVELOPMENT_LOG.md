@@ -30,7 +30,8 @@
 - Added validated, capped pagination to client proposal listings and page controls to the client proposal review screen.
 - Added a database readiness endpoint and configured the Compose API health check to wait for PostgreSQL readiness.
 - Added unit coverage for page and limit bounds and extended the clean SQLite E2E smoke to verify page results and total count.
-- Verified backend build, 33 backend tests, full SQLite E2E smoke, and frontend production build.
+- Added an optional shared Redis rate-limit store with bounded fixed-window counters, TLS URL validation, Compose wiring, and clean shutdown.
+- Verified backend build, 37 backend tests, full SQLite E2E smoke, and frontend production build.
 - Rechecked local tooling and dependency advisories. Docker, Terraform, and AWS CLI are unavailable; three high-severity advisories remain in Prisma's config dependency chain and need a compatible Prisma upgrade.
 
 ## Open work

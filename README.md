@@ -67,4 +67,4 @@ Open [http://localhost:8080](http://localhost:8080). Stop the stack with `docker
 - Never commit `.env` files or real credentials. Production startup requires explicitly configured JWT and cookie secrets of at least 32 characters.
 - Local demo credentials and compose passwords are for disposable development use only.
 - Uploaded files are private to their owner or project participants. Supported resume types are PDF, DOCX, TXT, and Markdown, with a 10 MB limit.
-- Authentication, upload, and expensive matching endpoints have per-process rate limits. For multiple production API replicas, put a shared rate limiter at the gateway or add a distributed Express rate-limit store. Set `TRUST_PROXY_HOPS` only to the number of trusted reverse proxies in front of the API.
+- Authentication, upload, and expensive matching endpoints have rate limits. Local development defaults to an in-memory counter; set `RATE_LIMIT_REDIS_URL` to a shared `redis://` or `rediss://` endpoint to share fixed-window counters across API replicas. Set `TRUST_PROXY_HOPS` only to the number of trusted reverse proxies in front of the API.

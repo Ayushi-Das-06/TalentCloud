@@ -29,6 +29,7 @@ The first step after the gate is a no-provisioning infrastructure review: choose
 - RDS PostgreSQL for application data.
 - Private S3 bucket for uploaded files, with lifecycle/retention policy and encryption.
 - SQS standard queue with a dead-letter queue for resume-analysis jobs. The current SQS adapter should be selected instead of also operating Redis/BullMQ in the first AWS deployment.
+- Shared abuse protection: configure AWS WAF rate-based rules in front of the load balancer, or use a shared ElastiCache Redis endpoint via `RATE_LIMIT_REDIS_URL` if application-level counters are required. Keep the in-process memory fallback for single-instance local development only.
 - Secrets Manager for production secrets, IAM task roles with least privilege, and CloudWatch logs/alarms.
 
 The repository does not yet include reviewed Terraform/CloudFormation templates, ECS task/service definitions, IAM policies, dashboards/alarms, or an automated backup/restore rehearsal. AWS S3/SQS code has not been exercised against live services. Do not treat this document as a deployable production stack.

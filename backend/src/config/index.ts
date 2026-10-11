@@ -12,6 +12,7 @@ const jwtSecret = process.env.JWT_SECRET || (isProduction ? '' : developmentJwtS
 const cookieSecret = process.env.COOKIE_SECRET || (isProduction ? '' : developmentCookieSecret);
 const queueDriver = process.env.QUEUE_DRIVER || 'memory';
 const storageDriver = process.env.STORAGE_DRIVER || 'local';
+const rateLimitRedisUrl = process.env.RATE_LIMIT_REDIS_URL || '';
 const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS || 0);
 const matchingWeights = {
   skill: parseInt(process.env.MATCH_WEIGHT_SKILL || '40', 10),
@@ -27,6 +28,13 @@ if (!['memory', 'bullmq', 'sqs'].includes(queueDriver)) {
 }
 if (!['local', 's3'].includes(storageDriver)) {
   throw new Error('STORAGE_DRIVER must be local or s3.');
+}
+if (rateLimitRedisUrl) {
+  let protocol = '';
+  try { protocol = new URL(rateLimitRedisUrl).protocol; } catch { /* validation below reports one consistent message */ }
+  if (!['redis:', 'rediss:'].includes(protocol)) {
+    throw new Error('RATE_LIMIT_REDIS_URL must be a valid redis:// or rediss:// URL.');
+  }
 }
 if (!Number.isInteger(trustProxyHops) || trustProxyHops < 0 || trustProxyHops > 5) {
   throw new Error('TRUST_PROXY_HOPS must be an integer from 0 to 5.');
@@ -71,6 +79,9 @@ export const config = {
       queueUrl: process.env.SQS_QUEUE_URL,
       endpoint: process.env.SQS_ENDPOINT,
     },
+  },
+  rateLimit: {
+    redisUrl: rateLimitRedisUrl,
   },
   storage: {
     driver: storageDriver as 'local' | 's3',
