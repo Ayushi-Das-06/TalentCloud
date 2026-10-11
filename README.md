@@ -35,6 +35,8 @@ npm run dev
 
 The backend uses the local SQLite schema by default. `npm run prisma:push` creates an empty SQLite file only when the configured file is absent, then applies the schema; it does not overwrite an existing database. `npm run seed` clears and recreates records in its configured database with demo data, so run it only against a disposable development database. The seeded demo account passwords are listed in [DEMO_GUIDE.md](./DEMO_GUIDE.md).
 
+On Windows, stop any running backend/worker process before `npm run prisma:generate`; the query-engine DLL cannot be replaced while another Node process has it loaded.
+
 The in-memory queue processes jobs in the API process. For BullMQ or SQS, run `npm run worker` in a separate backend terminal. BullMQ requires Redis and `QUEUE_DRIVER=bullmq`. SQS requires a standard queue URL, AWS region, and credentials or an IAM role, with `QUEUE_DRIVER=sqs`. For S3, set `STORAGE_DRIVER=s3`, bucket, and region; use an IAM role in AWS instead of static keys.
 
 ## Docker development

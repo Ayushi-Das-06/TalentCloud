@@ -13,6 +13,8 @@ Last audited: 2026-10-10. “Implemented” means present in the repository; “
 
 - [x] Prisma models cover users, profiles, skills, resumes, projects, applications, contracts, tasks, reviews, notifications, files, and background jobs.
 - [x] Seed script provides client, freelancer, admin, projects, applications, skills, and demonstration records. It clears the configured database before reseeding.
+- [x] VERIFIED COMPLETE — A clean disposable SQLite database was initialized with `npm run prisma:push`, seeded, and counted (6 users, 3 projects, 12 skills); the temp database was removed. SQLite and PostgreSQL schemas both validate (PostgreSQL used a placeholder URL, no server connection). Commit: pending.
+- [ ] BLOCKED — `npm run prisma:generate` fails on Windows with `EPERM` replacing `backend/node_modules/.prisma/client/query_engine-windows.dll.node` because an active Node/tsx process has that DLL loaded. Stop the TalentCloud process using it and rerun generation; if the lock persists, use a workspace outside OneDrive. The existing generated client still builds and ran the local E2E suite.
 - [x] Registration, login, current-user, and logout endpoints; client/freelancer/admin authorization; protected admin endpoints.
 - [x] React login/register state and protected routes.
 - [ ] Broader API integration coverage for suspension, ownership edge cases, and role escalation; focused regressions and a SQLite lifecycle smoke cover core behavior.

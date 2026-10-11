@@ -14,13 +14,13 @@ npm run test:e2e
 npm run build
 ```
 
-## Verified locally (2026-10-10)
+## Verified locally (2026-10-12)
 
 - Backend TypeScript build: passed.
-- Both Prisma schemas validate and generate clients; the backend builds against generated PostgreSQL and SQLite clients.
-- Backend test suite: 9 files, 37 tests passed. Coverage includes production and Redis config validation, public project visibility/query validation, pagination limits, shared Redis counter key/expiry behavior, auth rate limits, upload signatures, storage traversal/deletion, in-memory queue success/retry/exhaustion, intelligent features, DOCX/text parsing, and API access gates.
-- `npm run prisma:push` successfully initialized a fresh ignored SQLite database using the empty-file helper. The seed script then ran against another disposable ignored database, producing 6 users, 3 projects, 2 applications, and 2 contracts.
-- `npm run test:e2e` passed against a clean temporary SQLite database using the in-memory rate-limit fallback: database readiness, registration, project creation, competing applications, paginated client proposal listing, concurrent hire with exactly one contract, task access, attachment upload/access/deletion, public visibility, resume upload/worker completion, skill confirmation, contract completion, and review.
+- SQLite and PostgreSQL Prisma schemas validate; PostgreSQL validation used a placeholder URL and did not connect to a server. Backend build passes against the checked/generated client. Regenerating the SQLite Prisma client currently fails with Windows `EPERM` replacing the query-engine DLL while an active Node/tsx process has it loaded; stop that process and rerun `npm run prisma:generate`.
+- Backend test suite: 9 files, 39 tests passed. Coverage includes production and Redis config validation, public project privacy/visibility/query validation, pagination limits, shared Redis counter key/expiry behavior, auth rate limits, upload signatures, storage traversal/deletion, in-memory queue retry behavior, intelligent features, document parsing, and API access gates.
+- `npm run prisma:push` synchronized a fresh disposable SQLite database and `npm run seed` populated 6 users, 3 projects, and 12 skills. A Prisma client regeneration warning occurred during `db push` because of the active DLL lock; seeding succeeded with the existing client. The disposable database was removed.
+- `npm run test:e2e` passed against a clean temporary SQLite database using the in-memory rate-limit fallback: readiness, registration, draft privacy/publication/deletion, proposals and pagination, concurrent hiring/withdrawal/cancellation consistency, task access, attachment upload/access/deletion, resume worker/skill confirmation, contract completion, notification privacy, and reciprocal/duplicate review behavior.
 - Frontend TypeScript check and production build: passed. Route-level splitting reduced the initial JavaScript chunk from 719.28 kB to 232.52 kB minified; Recharts is isolated in a 372.43 kB chunk. Both are below Vite's 500 kB advisory threshold.
 - GitHub access check: authenticated fetch succeeded for the private repository. Before the implementation commit, `codex/talentcloud-audit` matched its upstream; after the commit, the verified commit was pushed as a fast-forward and local/upstream now point to the same revision.
 
@@ -28,6 +28,7 @@ npm run build
 
 - PostgreSQL service lifecycle and Docker images/Compose. Docker is unavailable here; the tested API lifecycle used disposable SQLite.
 - Shared Redis rate-limit behavior against a running Redis instance. The fixed-window store is unit tested with a fake Redis client; local Compose wires the API to Redis.
+- Prisma client regeneration in this Windows workspace remains blocked while an active Node process holds the engine DLL.
 - Redis/BullMQ runtime and SQS/S3 live services. The in-memory resume worker was exercised end to end.
 - Browser-driven E2E and accessibility review.
 - Docker is not installed. AWS credentials/account are not available and no cloud resources were provisioned.
