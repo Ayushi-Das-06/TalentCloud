@@ -6,6 +6,7 @@ Last reviewed: 2026-10-12. Completion estimates are approximate, based on the re
 
 - Local React/TypeScript frontend, Express/TypeScript API, Prisma schemas for SQLite and PostgreSQL, and existing marketplace modules were preserved.
 - Authentication reloads account state on protected requests, rejects suspended users and invalid roles, and production rejects missing, short, or known development JWT/cookie secrets.
+- SQLite E2E confirms public registration cannot assign `ADMIN`, and suspension immediately blocks both an existing token and new login.
 - Authorization covers admin operations, project visibility/matching, task access, contract participants, file downloads/deletion, and completed-project review writes.
 - Public discovery exposes open projects only. Public profile responses omit email and hide suspended profiles.
 - Client project proposal listings are paginated with a validated page size capped at 50; the client proposal screen exposes next/previous page controls.
@@ -25,7 +26,7 @@ Last reviewed: 2026-10-12. Completion estimates are approximate, based on the re
 - Frontend role-based login redirect, profile editing, notification read/unread controls, resume status/skill confirmation, application/hiring, workspace tasks/files, matching, skill gap, and estimator flows are connected to existing APIs.
 - Project attachment delete action works through the authorized API and storage abstraction.
 - Freelancer discovery profile links now resolve to a public read-only profile detail page; profile edits use protected APIs.
-- Backend build and 41 backend tests pass; a clean, disposable SQLite registration-to-review E2E smoke passes, including readiness, draft publication/deletion, paginated proposals, concurrent hire/withdrawal/cancellation state consistency, private attachment access, worker processing, notification privacy, and reciprocal/duplicate review checks. Frontend type check and production build pass. Both Prisma schemas validate.
+- Backend build and 41 backend tests pass; a clean, disposable SQLite registration-to-review E2E smoke passes, including role escalation/suspension checks, readiness, draft publication/deletion, paginated proposals, concurrent hire/withdrawal/cancellation state consistency, private attachment access, worker processing, notification privacy, and reciprocal/duplicate review checks. Frontend type check and production build pass. Both Prisma schemas validate.
 - Backend and frontend npm audits report zero vulnerabilities. Backend applies a scoped `@prisma/config` override to `deepmerge-ts@8.0.2`; Prisma remains at 6.19.3 and schema validation, build, tests, and E2E pass. Re-evaluate the override when Prisma updates its dependency pin.
 - Current verification: backend build and 41 tests pass; fresh SQLite push/seed succeeds with an existing generated client, and both schemas validate. Prisma Client regeneration fails with `EPERM` while a Node/tsx process holds the Windows query-engine DLL; the PostgreSQL schema check uses a placeholder URL, with no PostgreSQL service tested.
 - The seeded `backend/prisma/dev.db` contains demo marketplace rows and password hashes. It is now excluded from the branch tip and ignored for future changes; the local working file is preserved. Existing Git history was not rewritten.

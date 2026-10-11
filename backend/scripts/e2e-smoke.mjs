@@ -96,6 +96,17 @@ try {
   const client = await register('E2E Client', 'CLIENT');
   const freelancerOne = await register('E2E Freelancer One', 'FREELANCER');
   const freelancerTwo = await register('E2E Freelancer Two', 'FREELANCER');
+  const roleEscalation = await request(baseUrl, '/auth/register', {
+    method: 'POST',
+    json: {
+      name: 'E2E Escalation Attempt',
+      email: `role-escalation-${suffix}@example.test`,
+      password,
+      role: 'ADMIN',
+    },
+  });
+  pass(roleEscalation.response.status === 400, 'public registration cannot grant ADMIN role');
+
   const draftResult = await request(baseUrl, '/projects', {
     method: 'POST', token: client.token,
     json: {
@@ -283,6 +294,20 @@ try {
   });
   pass(reciprocalReview.response.status === 201, 'both completed-contract participants can review each other');
 
+  execFileSync(process.execPath, [prismaCli, 'db', 'execute', '--schema', 'prisma/schema.prisma', '--stdin'], {
+    cwd: backendDir,
+    env: dbEnvironment,
+    input: `UPDATE "User" SET "isSuspended" = 1 WHERE "id" = '${freelancerTwo.user.id}';`,
+    stdio: ['pipe', 'inherit', 'inherit'],
+  });
+  const suspendedSession = await request(baseUrl, '/auth/me', { token: freelancerTwo.token });
+  pass(suspendedSession.response.status === 403, 'suspended account token is rejected');
+  const suspendedLogin = await request(baseUrl, '/auth/login', {
+    method: 'POST',
+    json: { email: freelancerTwo.user.email, password },
+  });
+  pass(suspendedLogin.response.status === 403, 'suspended account cannot log in');
+
   const raceProjectResult = await request(baseUrl, '/projects', {
     method: 'POST', token: client.token,
     json: {
@@ -311,7 +336,7 @@ try {
     'concurrent cancellation and hiring preserve a consistent project/contract state',
   );
 
-  console.log('E2E smoke passed: registration, draft publication/deletion, proposals, concurrent hiring/withdrawal/cancellation consistency, private files, resume worker/skill confirmation, contract completion, and review.');
+  console.log('E2E smoke passed: registration/role authorization/suspension, draft publication/deletion, proposals, concurrent hiring/withdrawal/cancellation consistency, private files, resume worker/skill confirmation, contract completion, and review.');
 } finally {
   if (apiProcess && apiProcess.exitCode === null) {
     apiProcess.kill(process.platform === 'win32' ? undefined : 'SIGTERM');

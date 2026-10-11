@@ -18,7 +18,7 @@ Last audited: 2026-10-12. “Implemented” means present in the repository; “
 - [x] VERIFIED COMPLETE — S3 storage now fails fast unless `S3_BUCKET_NAME` is explicitly configured; it no longer silently targets a generic bucket name. Empty and valid bucket configuration regression tests passed. Commit checkpoint pending.
 - [x] Registration, login, current-user, and logout endpoints; client/freelancer/admin authorization; protected admin endpoints.
 - [x] React login/register state and protected routes.
-- [ ] Broader API integration coverage for suspension, ownership edge cases, and role escalation; focused regressions and a SQLite lifecycle smoke cover core behavior.
+- [x] VERIFIED COMPLETE — SQLite E2E verifies public registration cannot grant ADMIN, suspended users cannot use existing tokens or log in, and existing ownership checks deny cross-user withdrawal/file/notification access. Broader route-by-route role/ownership coverage remains in progress.
 
 ## Security verification status
 
