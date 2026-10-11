@@ -36,6 +36,35 @@ describe('public project visibility', () => {
     expect(res.status).not.toHaveBeenCalled();
   });
 
+  it('does not select client email for public project discovery', async () => {
+    prismaMock.project.findMany.mockResolvedValue([]);
+    prismaMock.project.count.mockResolvedValue(0);
+    const req = { query: {} } as unknown as Request;
+    const res = makeResponse();
+
+    await getProjects(req, res, vi.fn());
+
+    expect(prismaMock.project.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      include: expect.objectContaining({
+        client: { include: { user: { select: { name: true, avatarUrl: true } } } },
+      }),
+    }));
+  });
+
+  it('does not select client email for public project details', async () => {
+    prismaMock.project.findUnique.mockResolvedValue({ id: 'open-id', status: 'OPEN', clientId: 'client-id' });
+    const req = { params: { id: 'open-id' } } as unknown as Request;
+    const res = makeResponse();
+
+    await getProjectById(req, res, vi.fn());
+
+    expect(prismaMock.project.findUnique).toHaveBeenCalledWith(expect.objectContaining({
+      include: expect.objectContaining({
+        client: { include: { user: { select: { id: true, name: true, avatarUrl: true } } } },
+      }),
+    }));
+  });
+
   it('hides a non-open project from unauthenticated detail requests', async () => {
     prismaMock.project.findUnique.mockResolvedValue({ id: 'draft-id', status: 'DRAFT', clientId: 'client-id' });
     const req = { params: { id: 'draft-id' } } as unknown as Request;
