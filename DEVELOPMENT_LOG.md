@@ -88,3 +88,4 @@
 - Frontend lint checkpoint: `fe49a31` (`chore(frontend): add strict lint checks`) pushed to `origin/codex/talentcloud-audit`.
 - Local built API/Vite smoke on a disposable seeded SQLite database confirmed liveness, readiness, public project listing, SPA shell response, and CORS preflight. The test database and server processes were removed afterward; this was an HTTP smoke, not a browser-driven workflow.
 - Documentation/demo checklist updates record the verified commands, demo workflow, account plan limits, and remaining blockers; this docs checkpoint is committed and pushed with this log.
+- Documentation checkpoint: `789f824` (`docs(audit): finalize setup and demo verification`) pushed to `origin/codex/talentcloud-audit`; GitHub and local SHA matched during verification.
