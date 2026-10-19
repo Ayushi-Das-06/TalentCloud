@@ -8,11 +8,7 @@ import { Badge } from '../components/common/Badge.js';
 import {
   PlusCircle,
   Briefcase,
-  Users,
-  CheckCircle,
-  Clock,
   ArrowRight,
-  TrendingUp,
   Send,
   Trash2,
 } from 'lucide-react';

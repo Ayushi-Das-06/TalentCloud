@@ -3,12 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { apiFetch } from '../lib/api.js';
 import { FreelancerProfile } from '../types/index.js';
-import { Badge } from '../components/common/Badge.js';
 import {
   Search,
   Star,
-  CheckCircle,
-  Briefcase,
   User,
   ArrowRight,
 } from 'lucide-react';

@@ -12,12 +12,10 @@ import {
   Clock,
   Layers,
   Sparkles,
-  UserCheck,
   Send,
   Building,
   CheckCircle2,
   AlertCircle,
-  FileCheck,
 } from 'lucide-react';
 
 export function ProjectDetailsPage() {

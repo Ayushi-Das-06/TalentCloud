@@ -5,7 +5,6 @@ import {
   Cloud,
   Briefcase,
   Users,
-  Bell,
   Cpu,
   Layers,
   LogOut,

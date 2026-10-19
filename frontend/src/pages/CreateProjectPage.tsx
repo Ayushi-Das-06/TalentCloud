@@ -19,8 +19,6 @@ export function CreateProjectPage() {
   const [expectedDeliverables, setExpectedDeliverables] = useState('');
   const [error, setError] = useState('');
 
-  const [estimateData, setEstimateData] = useState<any>(null);
-
   // Quick Heuristic Estimate Call
   const handleFetchEstimate = async () => {
     try {
@@ -37,7 +35,6 @@ export function CreateProjectPage() {
       });
 
       if (res?.data) {
-        setEstimateData(res.data);
         setMinBudget(res.data.suggestedBudgetMin.toString());
         setMaxBudget(res.data.suggestedBudgetMax.toString());
         setEstimatedDurationDays(res.data.suggestedDurationDaysMax.toString());

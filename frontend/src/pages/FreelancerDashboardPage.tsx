@@ -6,16 +6,10 @@ import { apiFetch } from '../lib/api.js';
 import { Application, Contract } from '../types/index.js';
 import { Badge } from '../components/common/Badge.js';
 import {
-  FileText,
   UploadCloud,
-  CheckCircle2,
-  Clock,
-  Briefcase,
   Layers,
   ArrowRight,
-  TrendingUp,
   Cpu,
-  RefreshCw,
 } from 'lucide-react';
 
 export function FreelancerDashboardPage() {
@@ -25,7 +19,7 @@ export function FreelancerDashboardPage() {
   const [uploadStatus, setUploadStatus] = useState<string>('');
 
   // 1. Fetch Freelancer Applications
-  const { data: appData, isLoading: appsLoading } = useQuery({
+  const { data: appData } = useQuery({
     queryKey: ['myApplications'],
     queryFn: () => apiFetch<{ data: Application[] }>('/applications/my-applications'),
   });
@@ -72,7 +66,7 @@ export function FreelancerDashboardPage() {
         body: formData,
       });
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       setUploadStatus('Resume submitted! Background worker is extracting skills...');
       setSelectedFile(null);
       refetchResume();

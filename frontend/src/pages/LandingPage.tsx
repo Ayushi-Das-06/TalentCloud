@@ -4,12 +4,9 @@ import { useAuth } from '../context/AuthContext.js';
 import {
   Sparkles,
   ArrowRight,
-  Shield,
   Layers,
   Cpu,
-  CheckCircle2,
   TrendingUp,
-  FileText,
   UserCheck,
 } from 'lucide-react';
 

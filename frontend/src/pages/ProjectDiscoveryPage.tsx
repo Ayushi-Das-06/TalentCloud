@@ -6,13 +6,9 @@ import { Project } from '../types/index.js';
 import { Badge } from '../components/common/Badge.js';
 import {
   Search,
-  Filter,
   DollarSign,
-  Clock,
   Briefcase,
   ChevronRight,
-  Layers,
-  Sparkles,
 } from 'lucide-react';
 
 export function ProjectDiscoveryPage() {

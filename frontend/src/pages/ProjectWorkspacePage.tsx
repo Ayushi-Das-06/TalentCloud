@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../lib/api.js';
 import { useAuth } from '../context/AuthContext.js';
@@ -9,13 +9,9 @@ import { Modal } from '../components/common/Modal.js';
 import {
   CheckCircle2,
   PlusCircle,
-  Clock,
-  Layers,
   Star,
   CheckCircle,
-  AlertCircle,
   FileText,
-  User,
   Trash2,
 } from 'lucide-react';
 
@@ -41,7 +37,7 @@ export function ProjectWorkspacePage() {
   });
 
   // Fetch Tasks
-  const { data: taskData, isLoading } = useQuery({
+  const { data: taskData } = useQuery({
     queryKey: ['projectTasks', projectId],
     queryFn: () => apiFetch<{ data: Task[] }>(`/tasks/project/${projectId}`),
     enabled: !!projectId,

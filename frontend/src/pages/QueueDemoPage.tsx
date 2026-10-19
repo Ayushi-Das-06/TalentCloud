@@ -1,17 +1,14 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../lib/api.js';
 import { Badge } from '../components/common/Badge.js';
 import {
   Cpu,
-  Activity,
   RefreshCw,
   Zap,
   AlertCircle,
   CheckCircle2,
-  Clock,
   Play,
-  Server,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -20,7 +17,7 @@ export function QueueDemoPage() {
   const [burstResult, setBurstResult] = useState<any>(null);
   const [burstLoading, setBurstLoading] = useState(false);
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, refetch } = useQuery({
     queryKey: ['queueStats'],
     queryFn: () => apiFetch<{ data: any }>('/admin/queue'),
     refetchInterval: 3000, // Auto-poll every 3s
@@ -51,8 +48,6 @@ export function QueueDemoPage() {
   };
 
   const stats = data?.data || {};
-  const sysStats = systemStats?.stats || {};
-  const queueStats = systemStats?.queue || {};
   const system = systemStats?.system || {};
 
   const chartData = [

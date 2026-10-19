@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../lib/api.js';
-import { useAuth } from '../context/AuthContext.js';
-import { Badge } from '../components/common/Badge.js';
 import {
   Sparkles,
-  Target,
   CheckCircle2,
   AlertCircle,
   TrendingUp,
@@ -15,7 +12,6 @@ import {
 } from 'lucide-react';
 
 export function SkillGapPage() {
-  const { user } = useAuth();
   const [targetProjectId, setTargetProjectId] = useState('');
   const [customSkills, setCustomSkills] = useState('');
   const [analysisResult, setAnalysisResult] = useState<any>(null);

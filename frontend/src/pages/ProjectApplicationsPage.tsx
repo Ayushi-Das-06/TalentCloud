@@ -7,12 +7,7 @@ import { Badge } from '../components/common/Badge.js';
 import {
   Users,
   CheckCircle,
-  Clock,
-  DollarSign,
-  Star,
-  ArrowRight,
   AlertCircle,
-  Briefcase,
 } from 'lucide-react';
 
 export function ProjectApplicationsPage() {
@@ -45,7 +40,7 @@ export function ProjectApplicationsPage() {
         method: 'POST',
         body: JSON.stringify({ applicationId }),
       }),
-    onSuccess: (res) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId] });
       queryClient.invalidateQueries({ queryKey: ['projectApplications', projectId] });
       navigate(`/workspace/projects/${projectId}`);
