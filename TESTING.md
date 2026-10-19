@@ -16,7 +16,7 @@ npm run test:e2e
 npm run build
 ```
 
-## Verified locally (2026-10-19)
+## Verified locally (2026-10-20)
 
 - Backend TypeScript build: passed after clean install and Prisma Client generation.
 - Fresh backend `npm ci` passed in a clean copy and in the actual Windows/OneDrive checkout with `backend/.npmrc` setting `foreground-scripts=true`; no `--ignore-scripts` workaround was used. Explicit `npm run prisma:generate` passed (Prisma Client 6.19.3), followed by backend build and all tests.
@@ -24,6 +24,8 @@ npm run build
 - Backend test suite: 9 files, 41 tests passed. Coverage includes production/Redis/S3 configuration, project privacy, pagination, Redis counter behavior, auth rate limits, uploads/storage, memory queue, intelligent features, parsing, and API gates.
 - A fresh disposable SQLite database initialized with `npm run prisma:push` and seeded successfully with the synthetic demo dataset; the database was removed afterward.
 - `npm run test:e2e` passed against a clean temporary SQLite database using the in-memory rate-limit fallback: readiness, registration role escalation denial, suspended-session/login denial, draft privacy/publication/deletion, proposals and pagination, concurrent hiring/withdrawal/cancellation consistency, task access, attachment upload/access/deletion, resume worker/skill confirmation, contract completion, notification privacy, and reciprocal/duplicate review behavior.
+- Resume regression check: extracted skills remain suggestions only and do not enter the public freelancer profile until that freelancer explicitly confirms them; full SQLite E2E passed after the fix.
+- Compose configuration review found and fixed a MinIO default access-key mismatch between API/worker and MinIO initialization. Docker Compose could not be parsed or launched because Docker is not installed; the corrected defaults now consistently use `talentcloud-local`.
 - Started the built API and Vite dev server against a separately seeded disposable SQLite database. HTTP smoke verified API liveness (`HEALTHY`), database readiness (`READY`), one public seeded project, frontend app shell (HTTP 200), and CORS preflight (HTTP 204). The test DB was removed and both servers stopped afterward. This did not exercise a full interactive browser workflow.
 - Frontend `npm ci` passed (221 packages including lint dependencies; zero advisories). `npm run lint` passed without warnings, and `npm run build` passed TypeScript and Vite production compilation. The initial JavaScript chunk is 231.14 kB minified; Recharts is isolated in a 367.64 kB chunk.
 - GitHub access check: authenticated fetch succeeded for the private repository. Before the implementation commit, `codex/talentcloud-audit` matched its upstream; after the commit, the verified commit was pushed as a fast-forward and local/upstream now point to the same revision.
@@ -35,6 +37,7 @@ npm run build
 - Actual PostgreSQL app lifecycle, Docker images/Compose, browser-driven E2E, and accessibility checks.
 - Redis/BullMQ runtime and SQS/S3 live services. The in-memory resume worker was exercised end to end.
 - Docker is not installed. AWS credentials/account are not available; no cloud resources or charges.
+- PostgreSQL listens on local port 5432, but no credentials were available; no database was modified. Redis and MinIO ports 6379 and 9000 are unavailable.
 - S3 deletion uses the AWS SDK `DeleteObject` operation but has not been exercised against a live bucket.
 
 ## Dependency audit

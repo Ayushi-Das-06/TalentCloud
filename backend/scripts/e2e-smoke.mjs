@@ -265,6 +265,9 @@ try {
   pass(resumeStatus?.data.data?.status === 'COMPLETED', 'memory worker completes resume analysis');
   const suggestions = JSON.parse(resumeStatus.data.data.analysis.extractedSkills);
   pass(suggestions.length > 0, 'resume analysis persists extracted skills');
+  const freelancerProfile = await request(baseUrl, `/profiles/freelancers/${otherFreelancer.user.profile.id}`);
+  const profileSkillNames = freelancerProfile.data.data.skills.map((item) => item.skill.name.toLowerCase());
+  pass(suggestions.every((item) => !profileSkillNames.includes(item.skill.toLowerCase())), 'resume suggestions remain unlinked until freelancer confirmation');
   const confirmedSkill = await request(baseUrl, '/profiles/freelancer/skills', {
     method: 'POST', token: otherFreelancer.token,
     json: { skillName: suggestions[0].skill, yearsExperience: 1 },

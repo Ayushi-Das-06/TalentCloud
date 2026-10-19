@@ -2,14 +2,13 @@ import { queueService, QueueJob } from './queue/queueAdapter.js';
 import { storageService } from './storage/storageAdapter.js';
 import { prisma } from './db/prisma.js';
 import { parseResumeText, extractSkillsFromText } from './modules/intelligent/resumeParser.js';
-import { normalizeSkill } from './modules/intelligent/matchingEngine.js';
 
 export function initializeWorkerHandlers() {
   console.log('[Worker] Registering asynchronous background job handlers...');
 
   // 1. Resume Analysis Job Handler
   queueService.registerHandler('RESUME_ANALYSIS', async (job: QueueJob) => {
-    const { resumeId, fileKey, mimeType, freelancerProfileId, userId } = job.data;
+    const { resumeId, fileKey, mimeType, userId } = job.data;
     console.log(`[Worker] Starting RESUME_ANALYSIS for resume ${resumeId} (Job: ${job.id})`);
     try {
     const existingResume = await prisma.resume.findUnique({ where: { id: resumeId }, select: { status: true } });
@@ -59,33 +58,6 @@ export function initializeWorkerHandlers() {
           confidenceScore: analysisResult.confidenceScore,
         },
       });
-
-      // Synchronize extracted skills into freelancer profile
-      for (const item of analysisResult.extractedSkills) {
-        const normalized = normalizeSkill(item.skill);
-        let skill = await tx.skill.findUnique({ where: { normalizedName: normalized } });
-        if (!skill) {
-          skill = await tx.skill.create({
-            data: { name: normalized, normalizedName: normalized, category: 'Technical' },
-          });
-        }
-
-        await tx.freelancerSkill.upsert({
-          where: {
-            freelancerProfileId_skillId: {
-              freelancerProfileId,
-              skillId: skill.id,
-            },
-          },
-          update: { yearsExperience: Math.min(5, Math.max(1, item.occurrences)) },
-          create: {
-            freelancerProfileId,
-            skillId: skill.id,
-            yearsExperience: Math.min(5, Math.max(1, item.occurrences)),
-            isVerified: false,
-          },
-        });
-      }
 
       // Notify the freelancer
       await tx.notification.create({

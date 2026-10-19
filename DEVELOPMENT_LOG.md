@@ -1,5 +1,12 @@
 # Development Log
 
+## 2026-10-20 — Resume confirmation and Compose integration fixes
+
+- Corrected resume analysis so extracted skills stay in private analysis suggestions and are added to the freelancer profile only after explicit confirmation. Added an E2E assertion that checks the public profile remains unchanged before confirmation; backend build, all 41 unit tests, and the full disposable SQLite E2E pass.
+- Fixed the Docker Compose MinIO access key default mismatch between the MinIO server/init container and API/worker.
+- Re-ran frontend lint and production build, backend/frontend dependency audits, and backend build/tests/E2E. All passed; each audit reported zero vulnerabilities.
+- Docker/Compose, live PostgreSQL, Redis, and MinIO remain unverified because Docker is unavailable, PostgreSQL credentials are unavailable, and Redis/MinIO services are not running. AWS resources were not provisioned.
+
 ## 2026-10-09 — Initial project scaffold
 
 - Added the React frontend, Express/Prisma backend, SQLite and PostgreSQL schemas, seed data, and initial marketplace modules.
