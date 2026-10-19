@@ -1,6 +1,6 @@
 # TalentCloud Implementation Audit
 
-Last audited: 2026-10-19. Status distinguishes implementation, automated verification, local integration, and live cloud verification. Detailed findings are in `PROJECT_AUDIT.md` and `TESTING.md`.
+Last audited: 2026-10-20. Status distinguishes implementation, automated verification, local integration, and live cloud verification. Detailed findings are in `PROJECT_AUDIT.md` and `TESTING.md`.
 
 Status key: **VERIFIED COMPLETE** means the cited check passed; **IN PROGRESS** means implementation exists but coverage remains; **BLOCKED** means an environment prerequisite prevents verification; **NOT STARTED** means no implementation/check has been performed.
 
@@ -16,12 +16,12 @@ Status key: **VERIFIED COMPLETE** means the cited check passed; **IN PROGRESS** 
 - [x] Prisma models cover users, profiles, skills, resumes, projects, applications, contracts, tasks, reviews, notifications, files, and background jobs.
 - [x] Seed script provides client, freelancer, admin, projects, applications, skills, and demonstration records. It clears the configured database before reseeding.
 - [x] VERIFIED COMPLETE — A clean disposable SQLite database was initialized with `npm run prisma:push`, seeded, and counted (6 users, 3 projects, 12 skills); the temp database was removed. SQLite and PostgreSQL schemas both validate (PostgreSQL used a placeholder URL, no server connection). Commit: `5b53d3f`.
-- [x] VERIFIED COMPLETE — Frontend lockfile install (`npm ci`), TypeScript check, production build, and audit passed on 2026-10-19. Backend lockfile package install with scripts skipped also passed with zero audit advisories; generated-client lifecycle did not.
-- [x] VERIFIED COMPLETE — After confirming no TalentCloud process was running, `npm run prisma:generate` succeeded once using the preinstalled dependency set.
-- [ ] BLOCKED — A fresh backend `npm ci` stalls in Prisma's `prisma -v` install hook when Prisma engine files are absent; `npm ci --ignore-scripts` installs packages but leaves Prisma Client ungenerated. Reinstall inside OneDrive also hit `EBUSY` unlinking `node_modules/cors/lib/index.js`. The generated client is currently unavailable after the clean-install experiment, so backend build/tests need a completed Prisma engine install and generation before they can be repeated.
+- [x] VERIFIED COMPLETE — Backend `.npmrc` sets `foreground-scripts=true` to avoid the observed Prisma Client install-script race with npm 11 on Windows. Plain `npm ci` passed in a fresh copy and this checkout; explicit Prisma generation, backend build, all 41 tests, and SQLite E2E passed.
+- [x] VERIFIED COMPLETE — Fresh disposable SQLite `prisma:push` and seed succeeded; both SQLite and PostgreSQL Prisma schemas validate. PostgreSQL validation is schema-only; a live PostgreSQL app lifecycle remains unverified.
 - [x] VERIFIED COMPLETE — S3 storage fails fast unless `S3_BUCKET_NAME` is explicitly configured; empty and valid bucket tests passed. Commit: `fe302e1`.
 - [x] VERIFIED COMPLETE — Backend and frontend dependency audits report zero vulnerabilities after a scoped `@prisma/config` override to `deepmerge-ts@8.0.2`; Prisma stays at 6.19.3. Commit: `143c761`.
 - [x] VERIFIED COMPLETE — E2E rejects public `ADMIN` registration and suspended account login/session use. Commit: `221a8f1`.
+- [x] VERIFIED COMPLETE — Multer upgraded to 2.4.0; backend build, 41 tests, upload validation tests, SQLite E2E, and backend dependency audits passed.
 - [x] Registration, login, current-user, and logout endpoints; client/freelancer/admin authorization; protected admin endpoints.
 - [x] React login/register state and protected routes.
 - [x] VERIFIED COMPLETE — SQLite E2E verifies public registration cannot grant ADMIN, suspended users cannot use existing tokens or log in, and existing ownership checks deny cross-user withdrawal/file/notification access. Broader route-by-route role/ownership coverage remains in progress.
@@ -73,13 +73,15 @@ Status key: **VERIFIED COMPLETE** means the cited check passed; **IN PROGRESS** 
 
 - [x] VERIFIED COMPLETE — Frontend dependencies updated to React Router 7.18.4, Vite 8.3.4, and Tailwind CSS 4.3.3 with the Vite integration. TypeScript/production build passes and `npm audit` reports zero frontend advisories. Commit: `046b2c5`.
 - [x] VERIFIED COMPLETE — Scoped the Prisma config dependency to patched `deepmerge-ts@8.0.2` without changing Prisma 6.19.3. Backend `npm audit --omit=dev` reports zero vulnerabilities; `npm ls`, SQLite/PostgreSQL schema validation, backend build, all 41 tests, and SQLite E2E pass with the override. Recheck when Prisma updates its pinned config dependency.
+- [x] VERIFIED COMPLETE — Frontend ESLint flat config checks TypeScript/React hooks and unused variables; `npm run lint` passes with zero warnings. Frontend clean install, production build, and `npm audit` pass.
 
 ## Frontend and quality
 
 - [x] Landing, discovery, project details, client/freelancer dashboards, proposal review, workspace with task attachments, skill-gap, estimator, and admin queue screens exist.
 - [x] Frontend production build passes with route-level code splitting. The initial JavaScript chunk is about 233 kB; the Recharts chunk is about 372 kB.
 - [x] Backend TypeScript build passes; current test count is recorded in `TESTING.md`.
-- [ ] Browser-driven end-to-end coverage and accessibility review.
+- [x] VERIFIED COMPLETE — Local built API and Vite service smoke passed using a disposable seeded SQLite DB: API liveness/readiness, public project endpoint, frontend app shell, and CORS preflight. Temporary resources/processes were cleaned up.
+- [ ] IN PROGRESS — Browser-driven end-to-end coverage and accessibility review.
 - [x] VERIFIED COMPLETE — Frontend and backend dependency audits report zero vulnerabilities after the tested scoped Prisma config override. Runtime/container and infrastructure checks remain open separately.
 
 ## Cloud deployment

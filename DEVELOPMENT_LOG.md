@@ -75,3 +75,16 @@
 - Detected local PostgreSQL 18 Windows service on port 5432. A no-password `psql` connection attempt failed authentication; no credentials were guessed and no real PostgreSQL workflow was attempted.
 - Updated AWS deployment guidance using current AWS Free plan documentation. The full managed stack is not a guaranteed zero-cost plan; local SQLite/local-files/in-memory-queue demonstration is the only verified zero-AWS-charge path. No AWS resources or charges.
 - Current accepted pushed checkpoints: `fe302e1` (explicit S3 bucket), `143c761` (Prisma config advisory fix), `221a8f1` (auth negative E2E). This documentation checkpoint remains to commit and push after review.
+
+## 2026-10-19 — Prisma clean install and upload dependency hardening
+
+- Reproduced the backend install issue from a clean copy. `@prisma/client` postinstall invokes Prisma generation while npm lifecycle scripts run concurrently; the CLI fallback observed in npm output was an install-order race, not a TalentCloud Node process holding the query-engine DLL.
+- Added `backend/.npmrc` with `foreground-scripts=true`. Plain `npm ci` passed in a clean copy outside OneDrive and in the actual checkout; no scripts were skipped. `npm run prisma:generate`, backend build, all 41 tests, and SQLite E2E passed afterward.
+- Fresh disposable SQLite schema push and seed passed; the temporary database was removed. SQLite and PostgreSQL schemas validated; no live PostgreSQL connection was made.
+- Upstream advisories/release notes showed Multer 1.x was affected by multipart denial-of-service issues. Upgraded to Multer 2.4.0; TypeScript build, all 41 tests, focused upload validation tests, SQLite E2E, and backend audit (zero vulnerabilities) passed. Frontend build and both dependency audits also passed.
+- Added frontend ESLint configuration for TypeScript, React Hooks, and unused-variable checks; removed the reported unused imports/state. A fresh frontend `npm ci`, `npm run lint` (zero warnings), production build, and audit passed. Tracked-file scans found no `.env`, local database, private-key, or common credential-pattern files in the current tree.
+- AWS resources remain unprovisioned. Docker/Compose, Redis, PostgreSQL application lifecycle, live S3/SQS, browser-driven E2E, and accessibility review remain outstanding.
+- Backend install/security checkpoint: `cff323f` (`fix(backend): stabilize Prisma install and patch Multer`) pushed to `origin/codex/talentcloud-audit`.
+- Frontend lint checkpoint: `fe49a31` (`chore(frontend): add strict lint checks`) pushed to `origin/codex/talentcloud-audit`.
+- Local built API/Vite smoke on a disposable seeded SQLite database confirmed liveness, readiness, public project listing, SPA shell response, and CORS preflight. The test database and server processes were removed afterward; this was an HTTP smoke, not a browser-driven workflow.
+- Documentation/demo checklist updates record the verified commands, demo workflow, account plan limits, and remaining blockers; this docs checkpoint is committed and pushed with this log.

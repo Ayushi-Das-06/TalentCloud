@@ -37,7 +37,13 @@ The backend uses the local SQLite schema by default. `npm run prisma:push` creat
 
 On Windows, stop any running backend/worker process before `npm run prisma:generate`; the query-engine DLL cannot be replaced while another Node process has it loaded.
 
+`backend/.npmrc` runs dependency lifecycle scripts in the foreground. This avoids a Prisma Client postinstall race observed with npm 11 on Windows. A fresh backend install (`npm ci`), explicit client generation, build, 41-test suite, and SQLite E2E were verified on this branch. If OneDrive reports `EBUSY` while replacing files, close project processes and work from a local checkout outside OneDrive; do not delete the original project or its data.
+
 The in-memory queue processes jobs in the API process. For BullMQ or SQS, run `npm run worker` in a separate backend terminal. BullMQ requires Redis and `QUEUE_DRIVER=bullmq`. SQS requires a standard queue URL, AWS region, and credentials or an IAM role, with `QUEUE_DRIVER=sqs`. For S3, set `STORAGE_DRIVER=s3`, bucket, and region; use an IAM role in AWS instead of static keys.
+
+## Verify locally
+
+From `backend/`, run `npm ci`, `npm run prisma:generate`, `npm run build`, `npm test`, and `npm run test:e2e`. The E2E uses a temporary SQLite database. From `frontend/`, run `npm ci`, `npm run lint`, and `npm run build`. `npm run seed` clears its target database, so use only the disposable development database described in [DEMO_GUIDE.md](./DEMO_GUIDE.md).
 
 ## Docker development
 

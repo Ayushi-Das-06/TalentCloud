@@ -1,8 +1,8 @@
 # TalentCloud project audit
 
-Last reviewed: 2026-10-19. This audit separates implementation, automated verification, local integration, and live cloud verification. No completion percentage is claimed.
+Last reviewed: 2026-10-20. This audit separates implementation, automated verification, local integration, and live cloud verification. No completion percentage is claimed.
 
-## Complete and tested
+## VERIFIED COMPLETE
 
 - Local React/TypeScript frontend, Express/TypeScript API, Prisma schemas for SQLite and PostgreSQL, and existing marketplace modules were preserved.
 - Authentication reloads account state on protected requests, rejects suspended users and invalid roles, and production rejects missing, short, or known development JWT/cookie secrets.
@@ -27,39 +27,37 @@ Last reviewed: 2026-10-19. This audit separates implementation, automated verifi
 - Project attachment delete action works through the authorized API and storage abstraction.
 - Freelancer discovery profile links now resolve to a public read-only profile detail page; profile edits use protected APIs.
 - At pushed checkpoint `221a8f1`, backend build and 41 tests passed; disposable SQLite E2E passed, including role escalation/suspension checks, readiness, draft publication/deletion, paginated proposals, concurrent hire/withdrawal/cancellation consistency, private attachment access, worker processing, notification privacy, and reciprocal/duplicate reviews. Frontend build and both Prisma schema validations passed.
-- Backend and frontend npm audits report zero vulnerabilities. Backend applies a scoped `@prisma/config` override to `deepmerge-ts@8.0.2`; Prisma remains at 6.19.3 and schema validation, build, tests, and E2E pass. Re-evaluate the override when Prisma updates its dependency pin.
-- On 2026-10-19, with no TalentCloud process running, Prisma Client generation succeeded once from the preinstalled dependencies. A later clean-install check left Prisma Client unavailable: normal backend `npm ci` stalled at Prisma's `prisma -v` install hook; `npm ci --ignore-scripts` succeeded but does not generate the client. The subsequent backend build and two test suites failed to import because `@prisma/client` had no generated `PrismaClient`. This is an install environment blocker after that clean-install experiment, not evidence of a code regression at the previously verified commit.
+- Backend and frontend npm audits report zero vulnerabilities. Backend applies a scoped `@prisma/config` override to `deepmerge-ts@8.0.2`, and Multer is now 2.4.0; Prisma remains at 6.19.3. Re-evaluate these dependencies as upstream releases/advisories change.
+- Backend `.npmrc` sets `foreground-scripts=true` to avoid the Prisma Client install-script race observed under npm 11 on Windows. Plain `npm ci` passed in a pristine copy and in this checkout; explicit `npm run prisma:generate`, backend build, all 41 tests, and SQLite E2E passed afterward.
+- A fresh disposable SQLite database initialized and seeded successfully, then was removed. Both Prisma schemas validate. PostgreSQL schema validation used a placeholder URL; the local PostgreSQL service rejected no-password authentication, so live PostgreSQL app lifecycle is not verified.
+- Local built API/Vite server smoke against a disposable seeded SQLite DB verified API liveness/readiness, project discovery response, frontend shell delivery, and CORS preflight. Full browser-driven user workflow remains unverified.
 - A PostgreSQL 18 Windows service is running and listening on port 5432. A `psql -w` connection as `postgres` failed with `fe_sendauth: no password supplied`; no credentials were guessed and no real PostgreSQL app lifecycle was tested.
 - The seeded `backend/prisma/dev.db` contains demo marketplace rows and password hashes. It is now excluded from the branch tip and ignored for future changes; the local working file is preserved. Existing Git history was not rewritten.
-- Changes are committed on `codex/talentcloud-audit` and pushed without modifying `main`.
+- Frontend `npm run lint` passes with zero warnings after removing unused imports/state; frontend clean install, typecheck, production build, and audit pass.
+- Implementation checkpoints `cff323f` (Prisma install and Multer security) and `fe49a31` (frontend lint) were pushed to `origin/codex/talentcloud-audit`.
 
-## Implemented but not tested
+## IN PROGRESS
 
+- Browser-driven E2E and accessibility review; wider authenticated-record pagination.
 - Dockerfiles and Compose topology for frontend, API, independent worker, PostgreSQL, Redis/BullMQ, and MinIO/S3-compatible storage, including private bucket initialization.
 - PostgreSQL, S3, and SQS execution paths beyond schema generation/build and adapter-level behavior.
 - Signal-driven API/worker shutdown and resume-job idempotency against live dependencies.
 - Shared rate-limit store behavior is unit tested, but the Redis adapter has not been exercised against a live Redis server.
 - PostgreSQL service lifecycle and migrations; the PostgreSQL schema validates/generates and the local API E2E was exercised against SQLite.
-
-## In progress
-
-- Broader API edge-case integration, browser-driven E2E, and PostgreSQL lifecycle coverage.
-- Accessibility review and pagination for other authenticated record-list endpoints. Project proposals now have validated, capped pagination.
 - File malware scanning/retention policy, infrastructure as code, observability dashboards, and recovery rehearsal.
-- Clean backend reinstall and Prisma engine/client generation after reinstall remain blocked at the Prisma install hook.
 
-## Blocked by user action
+## BLOCKED
 
 - Docker/Compose validation requires Docker Desktop installed locally. Then run the Docker setup commands in `README.md`.
-- Live AWS adapter/deployment validation requires an AWS account and credentials or IAM roles. No cloud resources have been provisioned.
+- Live AWS account-specific eligibility and adapter/deployment validation require AWS account access. No cloud resources have been provisioned.
 
 Fresh SQLite initialization now works through `npm run prisma:push`, which creates an empty ignored file before Prisma applies the schema. Direct `prisma db push` against a nonexistent file returned a blank engine error in this environment.
 
-## Not implemented
+## NOT STARTED
 
 - ECS/Fargate, RDS, IAM, Secrets Manager, CloudWatch, alarms, backup/restore automation, and Terraform/CloudFormation templates.
 - S3 presigned URLs (downloads currently stream through the authenticated API).
 - Configured SQS dead-letter queue policy. Exhausted jobs are marked failed in the database for admin inspection/retry; production queue redrive settings must still be configured.
 - Live Redis/BullMQ restart recovery, AWS SQS redrive, live object-store integration, and browser-driven E2E.
 
-Application workflows listed above have meaningful SQLite E2E coverage. Clean backend reinstall, PostgreSQL lifecycle, Redis, Docker, browser/accessibility, and cloud deployment are not currently verified. `AWS_DEPLOYMENT.md` records Free-plan constraints and the local zero-AWS-cost demo option.
+Application workflows listed above have meaningful SQLite E2E coverage. PostgreSQL lifecycle, Redis, Docker, browser/accessibility, and cloud deployment are not currently verified. `AWS_DEPLOYMENT.md` records Free-plan constraints and the local zero-AWS-cost demo option.
