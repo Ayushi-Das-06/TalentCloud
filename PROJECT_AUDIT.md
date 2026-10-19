@@ -1,6 +1,6 @@
 # TalentCloud project audit
 
-Last reviewed: 2026-10-12. Completion estimates are approximate, based on the requested scope and verified repository state. “Complete and tested” means locally exercised by the documented build or test; adapters requiring live infrastructure are not counted as tested.
+Last reviewed: 2026-10-19. This audit separates implementation, automated verification, local integration, and live cloud verification. No completion percentage is claimed.
 
 ## Complete and tested
 
@@ -26,9 +26,10 @@ Last reviewed: 2026-10-12. Completion estimates are approximate, based on the re
 - Frontend role-based login redirect, profile editing, notification read/unread controls, resume status/skill confirmation, application/hiring, workspace tasks/files, matching, skill gap, and estimator flows are connected to existing APIs.
 - Project attachment delete action works through the authorized API and storage abstraction.
 - Freelancer discovery profile links now resolve to a public read-only profile detail page; profile edits use protected APIs.
-- Backend build and 41 backend tests pass; a clean, disposable SQLite registration-to-review E2E smoke passes, including role escalation/suspension checks, readiness, draft publication/deletion, paginated proposals, concurrent hire/withdrawal/cancellation state consistency, private attachment access, worker processing, notification privacy, and reciprocal/duplicate review checks. Frontend type check and production build pass. Both Prisma schemas validate.
+- At pushed checkpoint `221a8f1`, backend build and 41 tests passed; disposable SQLite E2E passed, including role escalation/suspension checks, readiness, draft publication/deletion, paginated proposals, concurrent hire/withdrawal/cancellation consistency, private attachment access, worker processing, notification privacy, and reciprocal/duplicate reviews. Frontend build and both Prisma schema validations passed.
 - Backend and frontend npm audits report zero vulnerabilities. Backend applies a scoped `@prisma/config` override to `deepmerge-ts@8.0.2`; Prisma remains at 6.19.3 and schema validation, build, tests, and E2E pass. Re-evaluate the override when Prisma updates its dependency pin.
-- Current verification: backend build and 41 tests pass; fresh SQLite push/seed succeeds with an existing generated client, and both schemas validate. Prisma Client regeneration fails with `EPERM` while a Node/tsx process holds the Windows query-engine DLL; the PostgreSQL schema check uses a placeholder URL, with no PostgreSQL service tested.
+- On 2026-10-19, with no TalentCloud process running, Prisma Client generation succeeded once from the preinstalled dependencies. A later clean-install check left Prisma Client unavailable: normal backend `npm ci` stalled at Prisma's `prisma -v` install hook; `npm ci --ignore-scripts` succeeded but does not generate the client. The subsequent backend build and two test suites failed to import because `@prisma/client` had no generated `PrismaClient`. This is an install environment blocker after that clean-install experiment, not evidence of a code regression at the previously verified commit.
+- A PostgreSQL 18 Windows service is running and listening on port 5432. A `psql -w` connection as `postgres` failed with `fe_sendauth: no password supplied`; no credentials were guessed and no real PostgreSQL app lifecycle was tested.
 - The seeded `backend/prisma/dev.db` contains demo marketplace rows and password hashes. It is now excluded from the branch tip and ignored for future changes; the local working file is preserved. Existing Git history was not rewritten.
 - Changes are committed on `codex/talentcloud-audit` and pushed without modifying `main`.
 
@@ -45,7 +46,7 @@ Last reviewed: 2026-10-12. Completion estimates are approximate, based on the re
 - Broader API edge-case integration, browser-driven E2E, and PostgreSQL lifecycle coverage.
 - Accessibility review and pagination for other authenticated record-list endpoints. Project proposals now have validated, capped pagination.
 - File malware scanning/retention policy, infrastructure as code, observability dashboards, and recovery rehearsal.
-- Prisma Client regeneration in this Windows workspace remains blocked while a running TalentCloud process holds the query-engine DLL.
+- Clean backend reinstall and Prisma engine/client generation after reinstall remain blocked at the Prisma install hook.
 
 ## Blocked by user action
 
@@ -61,6 +62,4 @@ Fresh SQLite initialization now works through `npm run prisma:push`, which creat
 - Configured SQS dead-letter queue policy. Exhausted jobs are marked failed in the database for admin inspection/retry; production queue redrive settings must still be configured.
 - Live Redis/BullMQ restart recovery, AWS SQS redrive, live object-store integration, and browser-driven E2E.
 
-## Current estimate
-
-Approximately **80–85% of the requested application implementation** is present. Local SQLite lifecycle coverage passes and route-level splitting brings the initial JavaScript chunk below the Vite advisory threshold. Docker execution, PostgreSQL lifecycle, browser E2E, and AWS infrastructure remain unverified or absent. This is an engineering estimate, not a measured test-coverage percentage.
+Application workflows listed above have meaningful SQLite E2E coverage. Clean backend reinstall, PostgreSQL lifecycle, Redis, Docker, browser/accessibility, and cloud deployment are not currently verified. `AWS_DEPLOYMENT.md` records Free-plan constraints and the local zero-AWS-cost demo option.

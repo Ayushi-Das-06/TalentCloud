@@ -66,3 +66,12 @@
 - Checkpoint: S3 fail-fast configuration and documentation update; pushed checkpoint recorded after commit.
 - Prisma config dependency audit: applied an npm override scoped to `@prisma/config` for `deepmerge-ts@8.0.2`. Backend production audit now reports zero vulnerabilities. `npm ls` confirms the resolved version; both Prisma schemas validate, backend build, all 41 tests, and SQLite E2E pass. Prisma itself remains 6.19.3. Independent client generation remains unverified due the active Windows DLL lock.
 - Expanded the disposable SQLite E2E authorization checks: public registration attempting `ADMIN` is rejected, and a suspended user's existing token and fresh login both receive `403`. Backend build and updated E2E passed.
+
+## 2026-10-19 — Final completion and Free-plan assessment
+
+- Reconciled the current branch and docs. `codex/talentcloud-audit` was clean at pushed checkpoint `221a8f1` before this documentation pass.
+- Prisma Client generation succeeded once after confirming no project process was running. A backend `npm ci` then stalled at the Prisma `prisma -v` install hook when engine files were absent; `npm ci --ignore-scripts` installed the locked packages but left generated Prisma Client absent. An attempted clean reinstall in OneDrive also encountered `EBUSY` unlinking `cors/lib/index.js`. The follow-up backend build and tests therefore failed import because no PrismaClient was generated; this environment state is recorded accurately in `TESTING.md`.
+- Frontend `npm ci` completed (92 packages, 0 vulnerabilities); frontend typecheck/production build passed. Backend audit after `npm ci --ignore-scripts` reported 0 vulnerabilities. The last complete backend verification remains the passing 41-test build/E2E checkpoint at `221a8f1`.
+- Detected local PostgreSQL 18 Windows service on port 5432. A no-password `psql` connection attempt failed authentication; no credentials were guessed and no real PostgreSQL workflow was attempted.
+- Updated AWS deployment guidance using current AWS Free plan documentation. The full managed stack is not a guaranteed zero-cost plan; local SQLite/local-files/in-memory-queue demonstration is the only verified zero-AWS-charge path. No AWS resources or charges.
+- Current accepted pushed checkpoints: `fe302e1` (explicit S3 bucket), `143c761` (Prisma config advisory fix), `221a8f1` (auth negative E2E). This documentation checkpoint remains to commit and push after review.

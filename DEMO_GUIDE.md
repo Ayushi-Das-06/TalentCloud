@@ -2,7 +2,7 @@
 
 ## Seeded accounts
 
-`npm run seed` clears the configured database, then creates these local demo accounts:
+`npm run seed` clears the configured database, then creates these local demo accounts. Before running it, confirm `DATABASE_URL` points to a disposable development database: the command deletes/replaces its records. The default local SQLite database is appropriate for a fresh demo; do not run the seed command against a database containing work you need to keep.
 
 | Role | Email | Password |
 |---|---|---|
@@ -22,4 +22,4 @@ These are demonstration credentials, not production credentials.
 5. Upload a PDF, DOCX, TXT, or Markdown resume as the freelancer and view the queued/processed analysis.
 6. Sign in as admin and show system and queue metrics.
 
-The demonstration depends on a seeded disposable database. Docker and AWS are not required for the in-memory local path.
+The demonstration depends on a seeded disposable database. Docker and AWS are not required for the in-memory local path. For zero AWS spend, run the app locally with SQLite, local file storage, and the in-memory queue; this is a laptop demo and is not publicly reachable or highly available. See [AWS_DEPLOYMENT.md](./AWS_DEPLOYMENT.md) for the current cloud readiness gate and account-plan limits.

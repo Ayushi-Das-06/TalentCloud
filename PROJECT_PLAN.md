@@ -1,6 +1,8 @@
 # TalentCloud Implementation Audit
 
-Last audited: 2026-10-12. “Implemented” means present in the repository; “verified” means exercised by the local build or tests noted in `TESTING.md`. Detailed statuses are in `PROJECT_AUDIT.md`.
+Last audited: 2026-10-19. Status distinguishes implementation, automated verification, local integration, and live cloud verification. Detailed findings are in `PROJECT_AUDIT.md` and `TESTING.md`.
+
+Status key: **VERIFIED COMPLETE** means the cited check passed; **IN PROGRESS** means implementation exists but coverage remains; **BLOCKED** means an environment prerequisite prevents verification; **NOT STARTED** means no implementation/check has been performed.
 
 ## Foundation
 
@@ -14,8 +16,12 @@ Last audited: 2026-10-12. “Implemented” means present in the repository; “
 - [x] Prisma models cover users, profiles, skills, resumes, projects, applications, contracts, tasks, reviews, notifications, files, and background jobs.
 - [x] Seed script provides client, freelancer, admin, projects, applications, skills, and demonstration records. It clears the configured database before reseeding.
 - [x] VERIFIED COMPLETE — A clean disposable SQLite database was initialized with `npm run prisma:push`, seeded, and counted (6 users, 3 projects, 12 skills); the temp database was removed. SQLite and PostgreSQL schemas both validate (PostgreSQL used a placeholder URL, no server connection). Commit: `5b53d3f`.
-- [ ] BLOCKED — `npm run prisma:generate` fails on Windows with `EPERM` replacing `backend/node_modules/.prisma/client/query_engine-windows.dll.node` because an active Node/tsx process has that DLL loaded. Stop the TalentCloud process using it and rerun generation; if the lock persists, use a workspace outside OneDrive. The existing generated client still builds and ran the local E2E suite.
-- [x] VERIFIED COMPLETE — S3 storage now fails fast unless `S3_BUCKET_NAME` is explicitly configured; it no longer silently targets a generic bucket name. Empty and valid bucket configuration regression tests passed. Commit checkpoint pending.
+- [x] VERIFIED COMPLETE — Frontend lockfile install (`npm ci`), TypeScript check, production build, and audit passed on 2026-10-19. Backend lockfile package install with scripts skipped also passed with zero audit advisories; generated-client lifecycle did not.
+- [x] VERIFIED COMPLETE — After confirming no TalentCloud process was running, `npm run prisma:generate` succeeded once using the preinstalled dependency set.
+- [ ] BLOCKED — A fresh backend `npm ci` stalls in Prisma's `prisma -v` install hook when Prisma engine files are absent; `npm ci --ignore-scripts` installs packages but leaves Prisma Client ungenerated. Reinstall inside OneDrive also hit `EBUSY` unlinking `node_modules/cors/lib/index.js`. The generated client is currently unavailable after the clean-install experiment, so backend build/tests need a completed Prisma engine install and generation before they can be repeated.
+- [x] VERIFIED COMPLETE — S3 storage fails fast unless `S3_BUCKET_NAME` is explicitly configured; empty and valid bucket tests passed. Commit: `fe302e1`.
+- [x] VERIFIED COMPLETE — Backend and frontend dependency audits report zero vulnerabilities after a scoped `@prisma/config` override to `deepmerge-ts@8.0.2`; Prisma stays at 6.19.3. Commit: `143c761`.
+- [x] VERIFIED COMPLETE — E2E rejects public `ADMIN` registration and suspended account login/session use. Commit: `221a8f1`.
 - [x] Registration, login, current-user, and logout endpoints; client/freelancer/admin authorization; protected admin endpoints.
 - [x] React login/register state and protected routes.
 - [x] VERIFIED COMPLETE — SQLite E2E verifies public registration cannot grant ADMIN, suspended users cannot use existing tokens or log in, and existing ownership checks deny cross-user withdrawal/file/notification access. Broader route-by-route role/ownership coverage remains in progress.
@@ -79,7 +85,7 @@ Last audited: 2026-10-12. “Implemented” means present in the repository; “
 ## Cloud deployment
 
 - [x] PostgreSQL Prisma schema and local Docker Compose topology prepared for API, worker, frontend, PostgreSQL, Redis, and MinIO.
-- [ ] Docker image build and compose smoke test (Docker is not installed in the audited environment).
+- [ ] BLOCKED — Docker image build and Compose smoke require Docker Desktop; Docker is not installed.
 - [x] S3 and SQS SDK adapters and environment configuration prepared.
 - [ ] ECS/Fargate, RDS, ElastiCache, CloudWatch, IAM policies, secrets management, and deployment templates.
-- [ ] Live AWS validation. No AWS account or credentials were available, and no resources were provisioned.
+- [ ] BLOCKED — No AWS account credentials or account-specific plan/service eligibility were available. No resources were provisioned and no AWS charges incurred.

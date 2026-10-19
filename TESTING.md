@@ -14,24 +14,25 @@ npm run test:e2e
 npm run build
 ```
 
-## Verified locally (2026-10-12)
+## Verified locally (2026-10-19)
 
 - Backend TypeScript build: passed.
-- SQLite and PostgreSQL Prisma schemas validate; PostgreSQL validation used a placeholder URL and did not connect to a server. Backend build passes against the checked/generated client. Regenerating the SQLite Prisma client currently fails with Windows `EPERM` replacing the query-engine DLL while an active Node/tsx process has it loaded; stop that process and rerun `npm run prisma:generate`.
-- Backend test suite: 9 files, 41 tests passed. Coverage includes production, Redis, and S3 config validation, public project privacy/visibility/query validation, pagination limits, shared Redis counter key/expiry behavior, auth rate limits, upload signatures, storage traversal/deletion, in-memory queue retry behavior, intelligent features, document parsing, and API access gates.
+- At pushed checkpoint `221a8f1`, Prisma Client generation, backend build, all tests, and E2E passed. On 2026-10-19 no TalentCloud process was running and `npm run prisma:generate` succeeded once with the existing install. After a clean-install experiment, normal backend `npm ci` stalled at Prisma's `prisma -v` install hook; `npm ci --ignore-scripts` completed but left Prisma Client ungenerated. Backend build and two test suites then failed to import because `@prisma/client` had no generated `PrismaClient`. A clean install including Prisma engine/client generation is not verified.
+- Both Prisma schemas validated. PostgreSQL validation used a placeholder URL (schema-only). A local PostgreSQL 18 service is running, but `psql -w -h 127.0.0.1 -U postgres` returned `fe_sendauth: no password supplied`; no real application lifecycle test ran against it.
+- At pushed checkpoint `221a8f1`, backend tests passed: 9 files, 41 tests. After the clean-install experiment, 7 files/32 tests passed and 2 suites failed to import because generated Prisma Client was absent; do not treat that partial run as passing. Coverage includes production/Redis/S3 configuration, project privacy, pagination, Redis counter behavior, auth rate limits, uploads/storage, memory queue, intelligent features, parsing, and API gates.
 - `npm run prisma:push` synchronized a fresh disposable SQLite database and `npm run seed` populated 6 users, 3 projects, and 12 skills. A Prisma client regeneration warning occurred during `db push` because of the active DLL lock; seeding succeeded with the existing client. The disposable database was removed.
 - `npm run test:e2e` passed against a clean temporary SQLite database using the in-memory rate-limit fallback: readiness, registration role escalation denial, suspended-session/login denial, draft privacy/publication/deletion, proposals and pagination, concurrent hiring/withdrawal/cancellation consistency, task access, attachment upload/access/deletion, resume worker/skill confirmation, contract completion, notification privacy, and reciprocal/duplicate review behavior.
-- Frontend TypeScript check and production build: passed with Vite 8.3.4, React Router 7.18.4, and Tailwind CSS 4.3.3. The initial JavaScript chunk is 231.14 kB minified; Recharts is isolated in a 367.64 kB chunk.
+- Frontend `npm ci` passed (92 packages; zero advisories). Frontend TypeScript check and production build passed with Vite 8.3.4, React Router 7.18.4, and Tailwind CSS 4.3.3. The initial JavaScript chunk is 231.14 kB minified; Recharts is isolated in a 367.64 kB chunk.
 - GitHub access check: authenticated fetch succeeded for the private repository. Before the implementation commit, `codex/talentcloud-audit` matched its upstream; after the commit, the verified commit was pushed as a fast-forward and local/upstream now point to the same revision.
 
 ## Not verified
 
 - PostgreSQL service lifecycle and Docker images/Compose. Docker is unavailable here; the tested API lifecycle used disposable SQLite.
 - Shared Redis rate-limit behavior against a running Redis instance. The fixed-window store is unit tested with a fake Redis client; local Compose wires the API to Redis.
-- Prisma client regeneration in this Windows workspace remains blocked while an active Node process holds the engine DLL.
+- Clean backend dependency installation currently stalls at Prisma's engine/client install hook; see verified notes above.
 - Redis/BullMQ runtime and SQS/S3 live services. The in-memory resume worker was exercised end to end.
 - Browser-driven E2E and accessibility review.
-- Docker is not installed. AWS credentials/account are not available and no cloud resources were provisioned.
+- Docker is not installed. AWS credentials/account are not available; no cloud resources or charges.
 - S3 deletion uses the AWS SDK `DeleteObject` operation but has not been exercised against a live bucket.
 - The S3 adapter now requires an explicit bucket name at startup; empty and valid S3 bucket configuration cases are covered by unit tests.
 
