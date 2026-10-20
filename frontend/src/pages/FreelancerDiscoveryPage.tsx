@@ -103,7 +103,9 @@ export function FreelancerDiscoveryPage() {
                     <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
                       <span className="flex items-center gap-1 font-semibold text-amber-500">
                         <Star className="w-3.5 h-3.5 fill-current" />
-                        {freelancer.averageRating.toFixed(2)}
+                        {Number.isFinite(Number(freelancer.averageRating))
+  ? Number(freelancer.averageRating).toFixed(2)
+  : 'New'}
                       </span>
                       <span>•</span>
                       <span>{freelancer.completedProjectsCount} projects</span>

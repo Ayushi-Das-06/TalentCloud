@@ -5,7 +5,6 @@ import { createRedisRateLimitStore } from './redisRateLimitStore.js';
 
 const rateLimitRedis = config.rateLimit.redisUrl
   ? new Redis(config.rateLimit.redisUrl, {
-      lazyConnect: true,
       enableOfflineQueue: false,
       maxRetriesPerRequest: 1,
       connectTimeout: 3000,
