@@ -4,14 +4,14 @@
 
 - PostgreSQL Prisma schema: `backend/prisma/schema.postgres.prisma`.
 - AWS SDK adapters for private S3 object storage and SQS queue processing. SQS uses a standard queue; exhausted jobs are stored in the database for admin inspection/retry.
-- Container definitions for the frontend, API, and independent worker. Local Compose connects PostgreSQL, Redis/BullMQ, and MinIO/S3-compatible storage.
+- Container definitions for the frontend, API, and independent worker. Local Compose connects PostgreSQL, Redis/BullMQ, and RustFS S3-compatible storage.
 - Production configuration rejects missing, short, or known development JWT and cookie secrets.
 - Local SQLite initialization and disposable end-to-end workflows are available without cloud credentials.
 - The frontend now uses route-level lazy loading; the initial bundle and chart bundle are each below Vite's 500 kB advisory threshold.
 
 ## AWS integration readiness gate
 
-Begin AWS integration only after the local backend install/generation/build/test gate and the Docker Compose PostgreSQL, Redis-backed rate-limit/queue, and MinIO upload/download/delete smoke checks pass. The backend gate is verified: plain `npm ci` succeeds with `backend/.npmrc`, followed by Prisma Client generation, build, 41 tests, and SQLite E2E. Docker Compose config validation and all API/worker/frontend/toolbox image builds now pass; containers and real service workflows have not yet been started or tested. No AWS integration should be started under the current zero-charge constraint; the account plan and service eligibility cannot be inspected here, and the proposed managed stack is not guaranteed to cost $0. The local demo does not need AWS.
+Begin AWS integration only after the local backend install/generation/build/test gate and the Docker Compose PostgreSQL, Redis-backed rate-limit/queue, and RustFS upload/download/delete smoke checks pass. Current backend build, unit tests, SQLite E2E, Compose validation, and API/worker/frontend image builds pass. RustFS readiness, bucket initialization, and a live S3 adapter upload/download/delete smoke pass locally. The full API/worker/frontend stack and PostgreSQL/Redis Compose integration have not been started or verified. No AWS integration should be started under the current zero-charge constraint; the account plan and service eligibility cannot be inspected here, and the proposed managed stack is not guaranteed to cost $0. The local demo does not need AWS.
 
 Once the gate passes, the first step is a no-provisioning infrastructure review: choose a target AWS region, estimate recurring costs, and review the proposed service boundaries and access policies. Then prepare the AWS account security and billing safeguards below. Provisioning remains a separate explicit step after cost and architecture review. No AWS account, credentials, or resources were available or used during this audit.
 
@@ -66,6 +66,6 @@ The repository does not yet include reviewed Terraform/CloudFormation templates,
 
 ## Verification limits
 
-- Docker image/configuration validation passed. Container startup, PostgreSQL schema initialization, Redis/BullMQ processing, MinIO bucket setup/file lifecycle, and browser checks remain pending; these checks can be done locally without AWS resources.
+- Docker image/configuration validation passed. RustFS bucket setup and object lifecycle are verified; full application startup, PostgreSQL schema initialization, Redis/BullMQ processing, and browser checks remain pending and can be done locally without AWS resources.
 - PostgreSQL lifecycle testing, S3/SQS live calls, ECS deployment, HTTPS/domain setup, and failure recovery require infrastructure access and have not been attempted.
 - No AWS resources have been provisioned; no cloud charges have been incurred.

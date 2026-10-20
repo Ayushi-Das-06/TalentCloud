@@ -6,7 +6,7 @@ TalentCloud is a TypeScript monorepo with a React single-page client, Express AP
 flowchart LR
   Browser[React + Vite] -->|REST /api/v1| API[Express API]
   API --> DB[(SQLite local / PostgreSQL deployment)]
-  API --> Files[Local files / MinIO / S3]
+  API --> Files[Local files / RustFS / S3]
   API --> Queue{Queue adapter}
   Queue -->|memory| Inline[In-process async consumer]
   Queue -->|BullMQ| Redis[(Redis)]
@@ -29,4 +29,4 @@ flowchart LR
 
 ## AWS status
 
-The project has PostgreSQL, S3, and SQS adapters and a local container topology for API, worker, PostgreSQL, Redis, and MinIO. AWS infrastructure templates, IAM policies, CloudWatch configuration, and live deployment are not implemented or verified. When the first AWS architecture uses SQS instead of ElastiCache, apply shared abuse limits at AWS WAF or another shared edge layer.
+The project has PostgreSQL, S3, and SQS adapters and a local container topology for API, worker, PostgreSQL, Redis, and RustFS. The local object-storage initializer waits for RustFS readiness and creates the configured bucket idempotently through the same AWS SDK adapter used by uploads. AWS infrastructure templates, IAM policies, CloudWatch configuration, and live deployment are not implemented or verified. When the first AWS architecture uses SQS instead of ElastiCache, apply shared abuse limits at AWS WAF or another shared edge layer.

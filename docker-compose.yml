@@ -1,3 +1,11 @@
+x-object-storage-environment: &object-storage-environment
+  STORAGE_DRIVER: s3
+  S3_ENDPOINT: http://object-storage:9000
+  S3_REGION: us-east-1
+  S3_BUCKET_NAME: talentcloud-files
+  S3_ACCESS_KEY_ID: ${OBJECT_STORAGE_ACCESS_KEY:-${MINIO_ROOT_USER:-talentcloud-local}}
+  S3_SECRET_ACCESS_KEY: ${OBJECT_STORAGE_SECRET_KEY:-${MINIO_ROOT_PASSWORD:-local-only-talentcloud-object-storage-password}}
+
 services:
   toolbox:
     build:
@@ -17,6 +25,7 @@ services:
         condition: service_healthy
 
   api:
+    image: talentcloud-backend:local
     build: ./backend
     container_name: talentcloud-api
     restart: unless-stopped
@@ -31,12 +40,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       RATE_LIMIT_REDIS_URL: redis://redis:6379
-      STORAGE_DRIVER: s3
-      S3_ENDPOINT: http://minio:9000
-      S3_REGION: us-east-1
-      S3_BUCKET_NAME: talentcloud-files
-      S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-talentcloud-local}
-      S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-local-only-talentcloud-minio-password}
+      <<: *object-storage-environment
       JWT_SECRET: ${JWT_SECRET:-local-only-talentcloud-jwt-secret-change-before-deploy}
       COOKIE_SECRET: ${COOKIE_SECRET:-local-only-talentcloud-cookie-secret-change-before-deploy}
     expose:
@@ -48,7 +52,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      minio-init:
+      object-storage-init:
         condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5000/api/v1/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
@@ -57,7 +61,7 @@ services:
       retries: 5
 
   worker:
-    build: ./backend
+    image: talentcloud-backend:local
     container_name: talentcloud-worker
     restart: unless-stopped
     command: ["node", "dist/worker.js"]
@@ -67,12 +71,7 @@ services:
       QUEUE_DRIVER: bullmq
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      STORAGE_DRIVER: s3
-      S3_ENDPOINT: http://minio:9000
-      S3_REGION: us-east-1
-      S3_BUCKET_NAME: talentcloud-files
-      S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-talentcloud-local}
-      S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-local-only-talentcloud-minio-password}
+      <<: *object-storage-environment
       JWT_SECRET: ${JWT_SECRET:-local-only-talentcloud-jwt-secret-change-before-deploy}
       COOKIE_SECRET: ${COOKIE_SECRET:-local-only-talentcloud-cookie-secret-change-before-deploy}
     volumes:
@@ -82,7 +81,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      minio-init:
+      object-storage-init:
         condition: service_completed_successfully
 
   frontend:
@@ -127,34 +126,37 @@ services:
       timeout: 5s
       retries: 5
 
-  minio:
-    image: minio/minio:latest
-    container_name: marketplace-minio
+  object-storage:
+    image: rustfs/rustfs:1.0.3
+    container_name: marketplace-rustfs
     restart: unless-stopped
-    command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-talentcloud-local}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-local-only-talentcloud-minio-password}
+      RUSTFS_ACCESS_KEY: ${OBJECT_STORAGE_ACCESS_KEY:-${MINIO_ROOT_USER:-talentcloud-local}}
+      RUSTFS_SECRET_KEY: ${OBJECT_STORAGE_SECRET_KEY:-${MINIO_ROOT_PASSWORD:-local-only-talentcloud-object-storage-password}}
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+      RUSTFS_CONSOLE_ENABLE: "true"
     ports:
       - "9000:9000"
       - "9001:9001"
     volumes:
-      - minio_data:/data
+      - rustfs_data:/data
 
-  minio-init:
-    image: minio/mc:latest
-    container_name: talentcloud-minio-init
-    depends_on:
-      - minio
-    entrypoint: ["/bin/sh", "-ec"]
-    command:
-      - 'set -eu; until mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"; do sleep 2; done; until mc ready local; do sleep 2; done; mc mb --ignore-existing local/talentcloud-files'
+  object-storage-init:
+    image: talentcloud-backend:local
+    container_name: talentcloud-object-storage-init
+    restart: "no"
+    command: ["node", "dist/storage/initObjectStorage.js"]
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-talentcloud-local}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-local-only-talentcloud-minio-password}
+      NODE_ENV: development
+      <<: *object-storage-environment
+    depends_on:
+      object-storage:
+        condition: service_started
 
 volumes:
   postgres_data:
   redis_data:
   minio_data:
+  rustfs_data:
   backend_uploads:

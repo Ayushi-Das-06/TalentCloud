@@ -8,7 +8,7 @@ TalentCloud is a cloud-based freelancing and project marketplace with client and
 - Express 4, TypeScript, Prisma, and SQLite for local development. A PostgreSQL Prisma schema is provided for containers and hosted deployments.
 - JWT authentication, role checks, project/application/hiring/task/review/notification APIs, local file storage, and a resume analysis worker.
 - In-memory jobs for local runs; BullMQ/Redis and AWS SQS have queue adapters and a separate worker process.
-- Local files, MinIO, and AWS S3 use the same private storage adapter. Docker Compose configures MinIO; AWS integrations require configured resources and IAM roles or credentials and were not exercised in this environment.
+- Local files, RustFS, and AWS S3 use the same private storage adapter. Docker Compose configures RustFS; AWS integrations require configured resources and IAM roles or credentials and were not exercised in this environment.
 - Clients and hired freelancers can upload project/task files from the delivery workspace; private downloads check project membership.
 
 ## Local setup
@@ -47,7 +47,7 @@ From `backend/`, run `npm ci`, `npm run prisma:generate`, `npm run build`, `npm 
 
 ## Docker development
 
-Docker Compose builds the frontend, API, and worker and starts PostgreSQL, Redis, and MinIO. Project files use the MinIO S3-compatible adapter, with the private bucket initialized after MinIO is ready. API and worker credentials reference the same `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` values used by MinIO. The browser serves the frontend on port 8080; Nginx proxies `/api/` to the internal API, and the API CORS origin is `http://localhost:8080`. It uses the PostgreSQL schema and local-only development settings. Build first, then initialize a new/empty development database and seed it only if replacing its contents is acceptable:
+Docker Compose builds the frontend, API, and worker and starts PostgreSQL, Redis, and the pinned official `rustfs/rustfs:1.0.3` S3-compatible object store. Its readiness endpoint and a backend AWS SDK initializer ensure the private `talentcloud-files` bucket exists before the API or worker starts. The RustFS access/secret keys and API/worker S3 credentials resolve from the same `OBJECT_STORAGE_ACCESS_KEY` and `OBJECT_STORAGE_SECRET_KEY` variables (or the legacy `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` fallback). RustFS uses a new `rustfs_data` volume; the old `minio_data` volume remains declared and untouched because MinIO data is not automatically migrated. The browser serves the frontend on port 8080; Nginx proxies `/api/` to the internal API, and the API CORS origin is `http://localhost:8080`. It uses the PostgreSQL schema and local-only development settings. Build first, then initialize a new/empty development database and seed it only if replacing its contents is acceptable:
 
 ```powershell
 docker compose config
@@ -57,7 +57,7 @@ docker compose --profile tools run --rm toolbox npm run prisma:push:postgres
 docker compose up -d
 ```
 
-Open [http://localhost:8080](http://localhost:8080). The API and worker wait for PostgreSQL/Redis health and successful MinIO bucket initialization. The toolbox profile provides the explicit PostgreSQL schema push; it is deliberately not run automatically at API startup. Skip the seed step if the database volume contains data you want to preserve: the seed script deletes and recreates marketplace rows. `docker compose down` keeps database, Redis, MinIO, and upload volumes; do not add `-v` when preserving them. The Compose defaults are disposable local development credentials; set `POSTGRES_PASSWORD`, `MINIO_ROOT_USER`, and `MINIO_ROOT_PASSWORD` in the root `.env` before sharing the network or using the stack beyond local development.
+Open [http://localhost:8080](http://localhost:8080). The API and worker wait for PostgreSQL/Redis health and successful RustFS readiness plus bucket initialization. The toolbox profile provides the explicit PostgreSQL schema push; it is deliberately not run automatically at API startup. Skip the seed step if the database volume contains data you want to preserve: the seed script deletes and recreates marketplace rows. `docker compose down` keeps database, Redis, RustFS, and upload volumes; do not add `-v` when preserving them. The Compose defaults are disposable local development credentials; set `POSTGRES_PASSWORD`, `OBJECT_STORAGE_ACCESS_KEY`, and `OBJECT_STORAGE_SECRET_KEY` in the root `.env` before sharing the network or using the stack beyond local development.
 
 To load demo accounts and sample rows, seed only a new disposable database whose contents can be replaced. The seed script deletes and recreates marketplace rows; do not run it against an existing database with data to preserve:
 
@@ -65,7 +65,7 @@ To load demo accounts and sample rows, seed only a new disposable database whose
 docker compose --profile tools run --rm toolbox npm run seed
 ```
 
-`docker compose down` keeps database, Redis, MinIO, and upload volumes; do not add `-v` when preserving them. The Compose defaults are disposable local development credentials; set `POSTGRES_PASSWORD`, `MINIO_ROOT_USER`, and `MINIO_ROOT_PASSWORD` in the root `.env` before sharing the network or using the stack beyond local development.
+`docker compose down` keeps database, Redis, RustFS, and upload volumes; do not add `-v` when preserving them. The Compose defaults are disposable local development credentials; set `POSTGRES_PASSWORD`, `OBJECT_STORAGE_ACCESS_KEY`, and `OBJECT_STORAGE_SECRET_KEY` in the root `.env` before sharing the network or using the stack beyond local development.
 
 ## Documentation
 

@@ -4,6 +4,7 @@ import { Readable } from 'stream';
 import { v4 as uuidv4 } from 'uuid';
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { config } from '../config/index.js';
+import { createS3Client } from './s3Client.js';
 
 export interface StoredFileMetadata {
   fileKey: string;
@@ -13,30 +14,23 @@ export interface StoredFileMetadata {
   url: string;
 }
 
-class StorageService {
+export class StorageService {
   private localDir: string;
   private s3?: S3Client;
+  private storageConfig: typeof config.storage;
 
-  constructor() {
-    this.localDir = path.resolve(config.storage.localPath);
-    if (config.storage.driver === 'local') {
+  constructor(storageConfig: typeof config.storage = config.storage, s3Client?: S3Client) {
+    this.storageConfig = storageConfig;
+    this.localDir = path.resolve(storageConfig.localPath);
+    if (storageConfig.driver === 'local') {
       if (!fs.existsSync(this.localDir)) fs.mkdirSync(this.localDir, { recursive: true });
       console.log(`[Storage] Initialized local storage. Base directory: ${this.localDir}`);
       return;
     }
 
-    if (!config.storage.s3.bucket) throw new Error('S3_BUCKET_NAME is required when STORAGE_DRIVER=s3.');
-    const { accessKeyId, secretAccessKey } = config.storage.s3;
-    if (!!accessKeyId !== !!secretAccessKey) {
-      throw new Error('Set both S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY, or use the AWS default credential chain.');
-    }
-    this.s3 = new S3Client({
-      region: config.storage.s3.region,
-      endpoint: config.storage.s3.endpoint,
-      forcePathStyle: !!config.storage.s3.endpoint,
-      ...(accessKeyId && secretAccessKey ? { credentials: { accessKeyId, secretAccessKey } } : {}),
-    });
-    console.log(`[Storage] Initialized S3 storage for bucket ${config.storage.s3.bucket} in ${config.storage.s3.region}.`);
+    if (!storageConfig.s3.bucket) throw new Error('S3_BUCKET_NAME is required when STORAGE_DRIVER=s3.');
+    this.s3 = s3Client ?? createS3Client(storageConfig.s3);
+    console.log(`[Storage] Initialized S3 storage for bucket ${storageConfig.s3.bucket} in ${storageConfig.s3.region}.`);
   }
 
   public async saveFile(
@@ -49,9 +43,9 @@ class StorageService {
     if (!/^[a-zA-Z0-9_-]+$/.test(subFolder)) throw new Error('Invalid file storage folder.');
     const fileKey = `${subFolder}/${uuidv4()}${safeExt}`;
 
-    if (config.storage.driver === 's3') {
+    if (this.storageConfig.driver === 's3') {
       await this.s3!.send(new PutObjectCommand({
-        Bucket: config.storage.s3.bucket,
+        Bucket: this.storageConfig.s3.bucket,
         Key: fileKey,
         Body: fileBuffer,
         ContentType: mimeType,
@@ -74,10 +68,10 @@ class StorageService {
   }
 
   public async getFileStream(fileKey: string): Promise<{ stream: NodeJS.ReadableStream; mimeType: string; size: number } | null> {
-    if (config.storage.driver === 's3') {
+    if (this.storageConfig.driver === 's3') {
       if (!this.isSafeKey(fileKey)) return null;
       try {
-        const object = await this.s3!.send(new GetObjectCommand({ Bucket: config.storage.s3.bucket, Key: fileKey }));
+        const object = await this.s3!.send(new GetObjectCommand({ Bucket: this.storageConfig.s3.bucket, Key: fileKey }));
         if (!object.Body) return null;
         return {
           stream: Readable.from(object.Body as AsyncIterable<Uint8Array>),
@@ -108,10 +102,10 @@ class StorageService {
   }
 
   public async getFileBuffer(fileKey: string): Promise<Buffer | null> {
-    if (config.storage.driver === 's3') {
+    if (this.storageConfig.driver === 's3') {
       if (!this.isSafeKey(fileKey)) return null;
       try {
-        const object = await this.s3!.send(new GetObjectCommand({ Bucket: config.storage.s3.bucket, Key: fileKey }));
+        const object = await this.s3!.send(new GetObjectCommand({ Bucket: this.storageConfig.s3.bucket, Key: fileKey }));
         if (!object.Body) return null;
         return Buffer.from(await object.Body.transformToByteArray());
       } catch (error) {
@@ -127,9 +121,9 @@ class StorageService {
   }
 
   public async deleteFile(fileKey: string): Promise<boolean> {
-    if (config.storage.driver === 's3') {
+    if (this.storageConfig.driver === 's3') {
       if (!this.isSafeKey(fileKey)) return false;
-      await this.s3!.send(new DeleteObjectCommand({ Bucket: config.storage.s3.bucket, Key: fileKey }));
+      await this.s3!.send(new DeleteObjectCommand({ Bucket: this.storageConfig.s3.bucket, Key: fileKey }));
       return true;
     }
 

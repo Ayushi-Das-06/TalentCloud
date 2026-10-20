@@ -1,5 +1,13 @@
 # Development Log
 
+## 2026-10-20 — Replace unavailable MinIO images with RustFS
+
+- Verified and pulled the official public `rustfs/rustfs:1.0.3` image; pinned it in Compose. RustFS stores new local object data in `rustfs_data`; the existing MinIO volume remains declared and untouched because no data migration was performed.
+- Removed the unpullable MinIO client sidecar. Added a backend AWS SDK initializer that checks RustFS `/health/ready`, verifies the configured bucket, creates it only when missing, and fails after bounded retries.
+- API and worker share the same S3 endpoint, bucket, region, and credentials as RustFS. The initializer reuses the backend production image; Nginx port 8080/API CORS settings and PostgreSQL/Redis configuration are unchanged.
+- Added S3 configuration, idempotent bucket setup, and storage adapter upload/stream/buffer/delete tests. Backend build, 46 tests, SQLite E2E, frontend lint/build, Compose config validation, and API/worker/frontend image builds passed.
+- Started only RustFS and its initializer. Readiness returned HTTP 200; bucket initialization and live S3 adapter upload/download/delete passed. The run created new `rustfs_data` and `backend_uploads` volumes, and did not modify existing PostgreSQL, Redis, or MinIO data. Full app/DB/queue integration and AWS resources remain unverified/unprovisioned.
+
 ## 2026-10-20 — Resume confirmation and Compose integration fixes
 
 - Corrected resume analysis so extracted skills stay in private analysis suggestions and are added to the freelancer profile only after explicit confirmation. Added an E2E assertion that checks the public profile remains unchanged before confirmation; backend build, all 41 unit tests, and the full disposable SQLite E2E pass.

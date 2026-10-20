@@ -9,7 +9,7 @@ Status key: **VERIFIED COMPLETE** means the cited check passed; **IN PROGRESS** 
 - [x] Local workspace access, runtime, repository docs, Git branch, and private GitHub read access verified.
 - [x] Frontend and backend TypeScript projects and lockfiles exist.
 - [x] SQLite local schema, PostgreSQL schema, seed script, and development Compose stack exist.
-- [x] VERIFIED COMPLETE — `docker compose config` validates the API, worker, frontend, PostgreSQL, Redis, MinIO, and tools profile. Default API/worker images and the profile-gated toolbox image build successfully. Container startup/integration smoke remains pending.
+- [x] VERIFIED COMPLETE — `docker compose config --quiet` validates the API, worker, frontend, PostgreSQL, Redis, RustFS, and tools profile. The shared API/worker/initializer backend image and frontend image build successfully. Container startup/integration smoke remains pending.
 
 ## Database and identity
 
@@ -86,8 +86,8 @@ Status key: **VERIFIED COMPLETE** means the cited check passed; **IN PROGRESS** 
 
 ## Cloud deployment
 
-- [x] PostgreSQL Prisma schema and local Docker Compose topology prepared for API, worker, frontend, PostgreSQL, Redis, and MinIO.
-- [x] VERIFIED COMPLETE — Docker Compose configuration and API/worker/frontend/toolbox image builds pass. No services were started, so PostgreSQL/Redis/MinIO/API/frontend runtime checks remain pending.
+- [x] PostgreSQL Prisma schema and local Docker Compose topology prepared for API, worker, frontend, PostgreSQL, Redis, and RustFS.
+- [x] VERIFIED COMPLETE — Docker Compose configuration and shared API/worker plus frontend image builds pass. RustFS readiness, bucket initialization, and S3 adapter CRUD were verified. Full API/frontend/worker and PostgreSQL/Redis runtime checks remain pending.
 - [x] S3 and SQS SDK adapters and environment configuration prepared.
 - [ ] ECS/Fargate, RDS, ElastiCache, CloudWatch, IAM policies, secrets management, and deployment templates.
 - [ ] BLOCKED — No AWS account credentials or account-specific plan/service eligibility were available. No resources were provisioned and no AWS charges incurred.

@@ -18,7 +18,7 @@ Last reviewed: 2026-10-20. This audit separates implementation, automated verifi
 - Request validation covers authentication, project create/update and discovery, application/hire/review/task/profile writes, supported route UUIDs, and upload metadata/content signatures.
 - Limits cover login/registration, file uploads, and computational matching endpoints. They can use process-local memory or shared Redis fixed-window counters.
 - Optional shared Redis fixed-window counters distribute those limits across API replicas; local development can continue using the in-memory default.
-- Private local/S3 storage supports upload, retrieval, deletion, random keys, path containment, and membership/ownership checks. Local storage behavior and deletion are tested.
+- Private local/S3 storage supports upload, retrieval, deletion, random keys, path containment, and membership/ownership checks. Local storage and mocked S3 upload/stream/buffer/delete behavior are unit tested.
 - S3 mode fails startup when `S3_BUCKET_NAME` is absent or blank, avoiding a silent fallback to a generic bucket. Configuration tests cover both missing and explicit bucket cases.
 - Resume parsing supports PDF, DOCX, TXT, and Markdown; suggestions are unverified until the freelancer confirms them in the dashboard.
 - VERIFIED COMPLETE — Fixed resume ingestion to persist extracted skills only as analysis suggestions. SQLite E2E verifies the public profile has none of those skills before confirmation, while explicit confirmation adds a verified profile skill.
@@ -29,8 +29,8 @@ Last reviewed: 2026-10-20. This audit separates implementation, automated verifi
 - Freelancer discovery profile links now resolve to a public read-only profile detail page; profile edits use protected APIs.
 - At pushed checkpoint `221a8f1`, backend build and 41 tests passed; disposable SQLite E2E passed, including role escalation/suspension checks, readiness, draft publication/deletion, paginated proposals, concurrent hire/withdrawal/cancellation consistency, private attachment access, worker processing, notification privacy, and reciprocal/duplicate reviews. Frontend build and both Prisma schema validations passed.
 - Current regression run after the resume confirmation fix: backend build passed; 9 test files/41 tests passed; full SQLite E2E passed including the new unconfirmed-skill privacy assertion; frontend lint/build passed; frontend audit and both backend audits reported zero vulnerabilities.
-- VERIFIED COMPLETE — Fixed the Compose MinIO credential mismatch by referencing the same `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` interpolation/defaults in API/worker. `minio-init` retries alias configuration, waits for `mc ready`, and idempotently creates the bucket. Compose config validation passes and preserves the complete init script as one `/bin/sh -ec` argument.
-- VERIFIED COMPLETE — `docker compose build` succeeded for API, worker, and frontend. `docker compose --profile tools build toolbox` also succeeded. PostgreSQL schema push and demo seed remain explicit commands; no database or volumes were touched and no services were started in this check.
+- VERIFIED COMPLETE — Replaced unavailable MinIO images with the publicly pullable official RustFS `rustfs/rustfs:1.0.3` image (locally verified digest `sha256:9ca9559533b537d10482fe923288b676ad08f92a7069d9a17327fbae3cab688b`). The backend initializer probes RustFS readiness and uses S3 `HeadBucket`/`CreateBucket` with bounded retries; bucket creation is idempotent. Compose shares object-storage credentials and endpoint settings between RustFS, API, worker, and initializer. The old `minio_data` declaration remains, and RustFS uses a separate `rustfs_data` volume; no volumes were deleted.
+- VERIFIED COMPLETE — `docker compose config --quiet` and `docker compose build api worker frontend object-storage-init` passed. API, worker, and initializer share one backend image. Backend build and 46 unit tests passed, SQLite E2E passed, frontend lint/build passed. PostgreSQL schema push and demo seed remain explicit commands. RustFS and its initializer were started; readiness, bucket initialization, and live adapter upload/download/delete passed. No existing volumes or databases were modified.
 - Frontend `API_BASE=/api/v1`, Nginx same-origin `/api/` proxy to `api:5000`, published frontend port `8080:80`, and API CORS origin `http://localhost:8080` are consistent.
 - Backend and frontend npm audits report zero vulnerabilities. Backend applies a scoped `@prisma/config` override to `deepmerge-ts@8.0.2`, and Multer is now 2.4.0; Prisma remains at 6.19.3. Re-evaluate these dependencies as upstream releases/advisories change.
 - Backend `.npmrc` sets `foreground-scripts=true` to avoid the Prisma Client install-script race observed under npm 11 on Windows. Plain `npm ci` passed in a pristine copy and in this checkout; explicit `npm run prisma:generate`, backend build, all 41 tests, and SQLite E2E passed afterward.
@@ -44,8 +44,8 @@ Last reviewed: 2026-10-20. This audit separates implementation, automated verifi
 ## IN PROGRESS
 
 - Browser-driven E2E and accessibility review; wider authenticated-record pagination.
-- Dockerfiles and Compose topology for frontend, API, independent worker, PostgreSQL, Redis/BullMQ, and MinIO/S3-compatible storage, including private bucket initialization.
-- PostgreSQL, S3, and SQS execution paths beyond schema generation/build and adapter-level behavior.
+- Dockerfiles and Compose topology for frontend, API, independent worker, PostgreSQL, Redis/BullMQ, and RustFS S3-compatible storage, including private bucket initialization.
+- PostgreSQL app lifecycle, AWS S3, and SQS execution paths beyond schema generation/build and adapter-level behavior; local RustFS S3 CRUD has been live-tested.
 - Signal-driven API/worker shutdown and resume-job idempotency against live dependencies.
 - Shared rate-limit store behavior is unit tested, but the Redis adapter has not been exercised against a live Redis server.
 - PostgreSQL service lifecycle and migrations; the PostgreSQL schema validates/generates and the local API E2E was exercised against SQLite.
@@ -53,7 +53,7 @@ Last reviewed: 2026-10-20. This audit separates implementation, automated verifi
 
 ## BLOCKED
 
-- Docker Compose API/frontend/toolbox image builds and configuration are validated; service startup and real PostgreSQL/Redis/BullMQ/MinIO file lifecycle smoke remain unverified. Use the safe setup sequence in `README.md` without deleting volumes.
+- Docker Compose configuration and API/worker/frontend image builds are validated; full application startup and PostgreSQL/Redis/BullMQ integration remain unverified. RustFS file lifecycle smoke passed. Use the safe setup sequence in `README.md` without deleting volumes.
 - Live AWS account-specific eligibility and adapter/deployment validation require AWS account access. No cloud resources have been provisioned.
 
 Fresh SQLite initialization now works through `npm run prisma:push`, which creates an empty ignored file before Prisma applies the schema. Direct `prisma db push` against a nonexistent file returned a blank engine error in this environment.
