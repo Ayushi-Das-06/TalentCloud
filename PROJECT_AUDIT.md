@@ -29,7 +29,9 @@ Last reviewed: 2026-10-20. This audit separates implementation, automated verifi
 - Freelancer discovery profile links now resolve to a public read-only profile detail page; profile edits use protected APIs.
 - At pushed checkpoint `221a8f1`, backend build and 41 tests passed; disposable SQLite E2E passed, including role escalation/suspension checks, readiness, draft publication/deletion, paginated proposals, concurrent hire/withdrawal/cancellation consistency, private attachment access, worker processing, notification privacy, and reciprocal/duplicate reviews. Frontend build and both Prisma schema validations passed.
 - Current regression run after the resume confirmation fix: backend build passed; 9 test files/41 tests passed; full SQLite E2E passed including the new unconfirmed-skill privacy assertion; frontend lint/build passed; frontend audit and both backend audits reported zero vulnerabilities.
-- Fixed Docker Compose MinIO defaults: API and worker access keys now match the `talentcloud-local` default configured for MinIO. This is code-reviewed only because Docker is unavailable.
+- VERIFIED COMPLETE — Fixed the Compose MinIO credential mismatch by referencing the same `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` interpolation/defaults in API/worker. `minio-init` retries alias configuration, waits for `mc ready`, and idempotently creates the bucket. Compose config validation passes and preserves the complete init script as one `/bin/sh -ec` argument.
+- VERIFIED COMPLETE — `docker compose build` succeeded for API, worker, and frontend. `docker compose --profile tools build toolbox` also succeeded. PostgreSQL schema push and demo seed remain explicit commands; no database or volumes were touched and no services were started in this check.
+- Frontend `API_BASE=/api/v1`, Nginx same-origin `/api/` proxy to `api:5000`, published frontend port `8080:80`, and API CORS origin `http://localhost:8080` are consistent.
 - Backend and frontend npm audits report zero vulnerabilities. Backend applies a scoped `@prisma/config` override to `deepmerge-ts@8.0.2`, and Multer is now 2.4.0; Prisma remains at 6.19.3. Re-evaluate these dependencies as upstream releases/advisories change.
 - Backend `.npmrc` sets `foreground-scripts=true` to avoid the Prisma Client install-script race observed under npm 11 on Windows. Plain `npm ci` passed in a pristine copy and in this checkout; explicit `npm run prisma:generate`, backend build, all 41 tests, and SQLite E2E passed afterward.
 - A fresh disposable SQLite database initialized and seeded successfully, then was removed. Both Prisma schemas validate. PostgreSQL schema validation used a placeholder URL; the local PostgreSQL service rejected no-password authentication, so live PostgreSQL app lifecycle is not verified.
@@ -51,7 +53,7 @@ Last reviewed: 2026-10-20. This audit separates implementation, automated verifi
 
 ## BLOCKED
 
-- Docker/Compose validation requires Docker Desktop installed locally. Then run the Docker setup commands in `README.md`.
+- Docker Compose API/frontend/toolbox image builds and configuration are validated; service startup and real PostgreSQL/Redis/BullMQ/MinIO file lifecycle smoke remain unverified. Use the safe setup sequence in `README.md` without deleting volumes.
 - Live AWS account-specific eligibility and adapter/deployment validation require AWS account access. No cloud resources have been provisioned.
 
 Fresh SQLite initialization now works through `npm run prisma:push`, which creates an empty ignored file before Prisma applies the schema. Direct `prisma db push` against a nonexistent file returned a blank engine error in this environment.

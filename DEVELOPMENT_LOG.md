@@ -3,9 +3,11 @@
 ## 2026-10-20 — Resume confirmation and Compose integration fixes
 
 - Corrected resume analysis so extracted skills stay in private analysis suggestions and are added to the freelancer profile only after explicit confirmation. Added an E2E assertion that checks the public profile remains unchanged before confirmation; backend build, all 41 unit tests, and the full disposable SQLite E2E pass.
-- Fixed the Docker Compose MinIO access key default mismatch between the MinIO server/init container and API/worker.
+- Fixed Docker Compose MinIO credential mismatches using shared environment references. Hardened `minio-init` to retry alias setup, wait for `mc ready`, and create its bucket idempotently; corrected the command to remain one shell script argument after Compose normalization.
+- Removed the obsolete Compose `version` field. Confirmed `/api/v1`, Nginx proxy to internal API port 5000, frontend host port 8080, and CORS origin agree.
+- `docker compose config --quiet`, default `docker compose build`, and `docker compose --profile tools build toolbox` passed. No containers were started; database schema initialization/seed and live service integrations remain unverified. Existing volumes/databases were untouched.
 - Re-ran frontend lint and production build, backend/frontend dependency audits, and backend build/tests/E2E. All passed; each audit reported zero vulnerabilities.
-- Docker/Compose, live PostgreSQL, Redis, and MinIO remain unverified because Docker is unavailable, PostgreSQL credentials are unavailable, and Redis/MinIO services are not running. AWS resources were not provisioned.
+- Live PostgreSQL, Redis, and MinIO remain unverified because the stack was not started. AWS resources were not provisioned.
 
 ## 2026-10-09 — Initial project scaffold
 

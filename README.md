@@ -47,16 +47,25 @@ From `backend/`, run `npm ci`, `npm run prisma:generate`, `npm run build`, `npm 
 
 ## Docker development
 
-Docker Compose builds the frontend, API, and worker and starts PostgreSQL, Redis, and MinIO. Project files use the MinIO S3-compatible adapter, with the private bucket initialized automatically. It uses the PostgreSQL schema and local-only development settings. Before using the app for the first time, initialize and seed its database:
+Docker Compose builds the frontend, API, and worker and starts PostgreSQL, Redis, and MinIO. Project files use the MinIO S3-compatible adapter, with the private bucket initialized after MinIO is ready. API and worker credentials reference the same `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` values used by MinIO. The browser serves the frontend on port 8080; Nginx proxies `/api/` to the internal API, and the API CORS origin is `http://localhost:8080`. It uses the PostgreSQL schema and local-only development settings. Build first, then initialize a new/empty development database and seed it only if replacing its contents is acceptable:
 
 ```powershell
+docker compose config
+docker compose build
 docker compose up -d postgres redis
-docker compose --profile tools run --rm toolbox npm exec prisma -- db push --schema prisma/schema.postgres.prisma
-docker compose --profile tools run --rm toolbox npm run seed
-docker compose up --build -d
+docker compose --profile tools run --rm toolbox npm run prisma:push:postgres
+docker compose up -d
 ```
 
-Open [http://localhost:8080](http://localhost:8080). Stop the stack with `docker compose down`; this keeps database, Redis, MinIO, and upload volumes. The Compose defaults are disposable local development credentials; set `POSTGRES_PASSWORD`, `MINIO_ROOT_USER`, and `MINIO_ROOT_PASSWORD` in the root `.env` before sharing the network or using the stack beyond local development. Docker is not installed in the currently audited local environment, so these container instructions have not been executed here.
+Open [http://localhost:8080](http://localhost:8080). The API and worker wait for PostgreSQL/Redis health and successful MinIO bucket initialization. The toolbox profile provides the explicit PostgreSQL schema push; it is deliberately not run automatically at API startup. Skip the seed step if the database volume contains data you want to preserve: the seed script deletes and recreates marketplace rows. `docker compose down` keeps database, Redis, MinIO, and upload volumes; do not add `-v` when preserving them. The Compose defaults are disposable local development credentials; set `POSTGRES_PASSWORD`, `MINIO_ROOT_USER`, and `MINIO_ROOT_PASSWORD` in the root `.env` before sharing the network or using the stack beyond local development.
+
+To load demo accounts and sample rows, seed only a new disposable database whose contents can be replaced. The seed script deletes and recreates marketplace rows; do not run it against an existing database with data to preserve:
+
+```powershell
+docker compose --profile tools run --rm toolbox npm run seed
+```
+
+`docker compose down` keeps database, Redis, MinIO, and upload volumes; do not add `-v` when preserving them. The Compose defaults are disposable local development credentials; set `POSTGRES_PASSWORD`, `MINIO_ROOT_USER`, and `MINIO_ROOT_PASSWORD` in the root `.env` before sharing the network or using the stack beyond local development.
 
 ## Documentation
 

@@ -11,7 +11,7 @@
 
 ## AWS integration readiness gate
 
-Begin AWS integration only after the local backend install/generation/build/test gate and the Docker Compose PostgreSQL, Redis-backed rate-limit/queue, and MinIO upload/download/delete smoke checks pass. The backend gate is now verified: plain `npm ci` succeeds with `backend/.npmrc`, followed by Prisma Client generation, build, 41 tests, and SQLite E2E. The Docker gate remains BLOCKED because Docker is unavailable in this workspace. No AWS integration should be started under the current zero-charge constraint; the account plan and service eligibility cannot be inspected here, and the proposed managed stack is not guaranteed to cost $0. The local demo does not need AWS.
+Begin AWS integration only after the local backend install/generation/build/test gate and the Docker Compose PostgreSQL, Redis-backed rate-limit/queue, and MinIO upload/download/delete smoke checks pass. The backend gate is verified: plain `npm ci` succeeds with `backend/.npmrc`, followed by Prisma Client generation, build, 41 tests, and SQLite E2E. Docker Compose config validation and all API/worker/frontend/toolbox image builds now pass; containers and real service workflows have not yet been started or tested. No AWS integration should be started under the current zero-charge constraint; the account plan and service eligibility cannot be inspected here, and the proposed managed stack is not guaranteed to cost $0. The local demo does not need AWS.
 
 Once the gate passes, the first step is a no-provisioning infrastructure review: choose a target AWS region, estimate recurring costs, and review the proposed service boundaries and access policies. Then prepare the AWS account security and billing safeguards below. Provisioning remains a separate explicit step after cost and architecture review. No AWS account, credentials, or resources were available or used during this audit.
 
@@ -41,7 +41,7 @@ These offer pages describe plan-level eligibility/allowances, not the state of t
 | --- | --- | --- |
 | Existing ECS/Fargate + RDS + S3 + SQS proposal | ECS orchestration itself has no fee, but Fargate charges for requested compute; the full design also introduces networking, logs, storage, and data transfer charges/credit use. Current account eligibility and a region/traffic-specific estimate are unknown. | Do not provision under a hard zero-charge requirement. An exact total cannot be quoted without region, task sizes/runtime, storage, request/egress volumes, and log retention. |
 | Single EC2 demo host | AWS lists selected EC2 instance types as available to explore using Free plan credits. EBS, public IPv4, transfer, and other use still consume credits; the Free plan expires/closes, so this is not a lasting host. | Potential temporary experiment only, after account-console eligibility and complete cost/credit estimate review. Not approved or tested. |
-| Local laptop demonstration | Uses the local SQLite, local file storage, and in-memory queue paths; AWS spend is $0. Docker is optional for this path. It is not publicly reachable or highly available. | The only verified zero-AWS-charge option; app flows are covered by disposable SQLite E2E. Docker Compose itself is not verified on this machine. |
+| Local laptop demonstration | Uses the local SQLite, local file storage, and in-memory queue paths; AWS spend is $0. Docker is optional for this path. It is not publicly reachable or highly available. | The only verified zero-AWS-charge option; app flows are covered by disposable SQLite E2E. Docker Compose config/images build, but runtime has not been verified. |
 
 Do not upgrade the account to gain service access. Do not create resources for the application under the current zero-charge requirement. The current evidence is sufficient to reject the full proposed managed AWS architecture as a guaranteed zero-cost deployment, but not to certify exact service availability in an account we cannot inspect.
 
@@ -66,6 +66,6 @@ The repository does not yet include reviewed Terraform/CloudFormation templates,
 
 ## Verification limits
 
-- Docker image and Compose validation is pending because Docker is unavailable here.
+- Docker image/configuration validation passed. Container startup, PostgreSQL schema initialization, Redis/BullMQ processing, MinIO bucket setup/file lifecycle, and browser checks remain pending; these checks can be done locally without AWS resources.
 - PostgreSQL lifecycle testing, S3/SQS live calls, ECS deployment, HTTPS/domain setup, and failure recovery require infrastructure access and have not been attempted.
 - No AWS resources have been provisioned; no cloud charges have been incurred.

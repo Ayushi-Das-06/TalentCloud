@@ -9,7 +9,7 @@ Status key: **VERIFIED COMPLETE** means the cited check passed; **IN PROGRESS** 
 - [x] Local workspace access, runtime, repository docs, Git branch, and private GitHub read access verified.
 - [x] Frontend and backend TypeScript projects and lockfiles exist.
 - [x] SQLite local schema, PostgreSQL schema, seed script, and development Compose stack exist.
-- [x] Dockerfiles and API, worker, frontend, PostgreSQL, Redis, and MinIO Compose services added; Docker is unavailable here, so image/compose validation is pending.
+- [x] VERIFIED COMPLETE — `docker compose config` validates the API, worker, frontend, PostgreSQL, Redis, MinIO, and tools profile. Default API/worker images and the profile-gated toolbox image build successfully. Container startup/integration smoke remains pending.
 
 ## Database and identity
 
@@ -87,7 +87,7 @@ Status key: **VERIFIED COMPLETE** means the cited check passed; **IN PROGRESS** 
 ## Cloud deployment
 
 - [x] PostgreSQL Prisma schema and local Docker Compose topology prepared for API, worker, frontend, PostgreSQL, Redis, and MinIO.
-- [ ] BLOCKED — Docker image build and Compose smoke require Docker Desktop; Docker is not installed.
+- [x] VERIFIED COMPLETE — Docker Compose configuration and API/worker/frontend/toolbox image builds pass. No services were started, so PostgreSQL/Redis/MinIO/API/frontend runtime checks remain pending.
 - [x] S3 and SQS SDK adapters and environment configuration prepared.
 - [ ] ECS/Fargate, RDS, ElastiCache, CloudWatch, IAM policies, secrets management, and deployment templates.
 - [ ] BLOCKED — No AWS account credentials or account-specific plan/service eligibility were available. No resources were provisioned and no AWS charges incurred.
